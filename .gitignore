@@ -1,0 +1,22 @@
+# IDE stuff
+.idea
+*.iml
+**/*.iml
+.vscode
+
+# terraform / terragrunt
+**/.terraform/
+**/.terraform.tfstate.lock.info
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/terraform.tfstate.*.backup
+**/errored.tfstate
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
