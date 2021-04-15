@@ -17,11 +17,11 @@ locals {
     distinct(
       concat(
         # 1. Compute & IAP APIs are enabled by default
-        list(
+        [
           "compute.googleapis.com",
           "iap.googleapis.com",
           "servicenetworking.googleapis.com"
-        ),
+        ],
         # 2. Enable vpaccess if one network requieres it
         [for r in keys(var.vpc_regions) : "vpcaccess.googleapis.com" if var.vpc_regions[r].vpcaccess],
         # 3. All services provided by the user
