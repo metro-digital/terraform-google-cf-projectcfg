@@ -24,8 +24,13 @@ remote_state {
   }
 }
 
+locals {
+  module_url     = "git::https://github.com/metro-digital/terraform-google-cf-projectcfg.git"
+  module_version = "latest"
+}
+
 terraform {
-  source = "metro-digital/cf-projectcfg/google"
+  source = "${local.module_url}///?ref=${local.module_version}"
 }
 
 # Protect module from being accidentally destroyed

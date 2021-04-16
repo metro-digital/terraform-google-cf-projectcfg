@@ -13,7 +13,7 @@
 # limitations under the License.
 
 module "tf-state-bucket" {
-  source     = "metro-digital/cf-bucket/google"
+  source     = "github.com/metro-digital/terraform-google-cf-bucket.git?ref=latest"
   
   project_id     = module.project-cfg.project_id
   name           = "${GCS_BUCKET}"

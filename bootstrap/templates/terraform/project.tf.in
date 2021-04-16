@@ -13,7 +13,7 @@
 # limitations under the License.
 
 module "project-cfg" {
-  source     = "metro-digital/cf-projectcfg/google"
+  source     = "github.com/metro-digital/terraform-google-cf-projectcfg.git?ref=latest"
   project_id = "${GCP_PROJECT_ID}"
 
   roles = {
