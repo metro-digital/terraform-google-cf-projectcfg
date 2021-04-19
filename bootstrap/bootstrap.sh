@@ -334,6 +334,8 @@ else
 
 	echo "${TEXT_COLOR_MAGENTA}You need to import the created service account into your state (inside '${OUTPUT_DIR}/project-cfg' folder):${TEXT_ALL_OFF}"
 	echo "terragrunt import 'google_service_account.service_accounts[\"${SA_NAME}\"]' projects/${GCP_PROJECT_ID}/serviceAccounts/${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
+	echo "${TEXT_BOLD}Remark: It is important to run 'terragrunt apply' here as you need the output in the next import!${TEXT_ALL_OFF}"
+	echo "terragrunt apply"
 
 	echo "${TEXT_COLOR_MAGENTA}You need to import the created GCS bucket into your state (inside '${OUTPUT_DIR}/buckets/terraform-state' folder):${TEXT_ALL_OFF}"
 	echo "terragrunt import 'google_storage_bucket.bucket' ${GCP_PROJECT_ID}/${GCS_BUCKET}"
