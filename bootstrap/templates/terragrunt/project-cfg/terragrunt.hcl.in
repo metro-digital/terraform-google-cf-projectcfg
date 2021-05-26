@@ -54,6 +54,9 @@ inputs = {
     "roles/compute.networkAdmin" = [
       "serviceAccount:${SA_FULL_NAME}"
     ]
+    "roles/vpcaccess.admin" = [
+      "serviceAccount:${SA_FULL_NAME}"
+    ]
     "roles/compute.securityAdmin" = [
       "serviceAccount:${SA_FULL_NAME}"
     ]
@@ -70,6 +73,9 @@ inputs = {
       "serviceAccount:${SA_FULL_NAME}"
     ]
     "roles/iam.securityAdmin" = [
+      "serviceAccount:${SA_FULL_NAME}"
+    ]
+    "roles/iam.roleAdmin" = [
       "serviceAccount:${SA_FULL_NAME}"
     ]
     "roles/serviceusage.serviceUsageAdmin" = [
