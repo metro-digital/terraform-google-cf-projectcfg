@@ -91,6 +91,10 @@ This [terraform] module depends on providers from HashiCorp, Inc. which are lice
   * [`hashicorp/google-beta`](https://github.com/hashicorp/terraform-provider-google-beta)
   * [`hashicorp/external`](https://github.com/hashicorp/terraform-provider-external)
 
+This [terraform] module uses pre-commit hooks which are licensed under MPL-2.0. You can obtain the respective source code here:
+  * [`terraform-linters/tflint`](https://github.com/terraform-linters/tflint)
+  * [`terraform-linters/tflint-ruleset-google`](https://github.com/terraform-linters/tflint-ruleset-google)
+
 [terraform]: https://terraform.io/
 [Private Google Access]: https://cloud.google.com/vpc/docs/configure-private-google-access
 [Serverless VPC Access]: https://cloud.google.com/vpc/docs/configure-serverless-vpc-access
