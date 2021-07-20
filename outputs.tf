@@ -23,4 +23,3 @@ output "service_accounts" {
     for name, data in google_service_account.service_accounts : name => data.email
   }
 }
-

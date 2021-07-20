@@ -92,4 +92,3 @@ resource "google_vpc_access_connector" "default" {
   ]
 
 }
-
