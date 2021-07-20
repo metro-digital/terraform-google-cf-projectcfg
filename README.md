@@ -14,6 +14,7 @@ This module allows you to configure a Google Cloud Platform project.
 - [Usage](#usage)
 - [Inputs](#inputs)
 - [Outputs](#outputs)
+- [Requirements](#requirements)
 - [License](#license)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
@@ -81,6 +82,13 @@ Please also take a deeper look into the [FAQ] - there are additional examples av
 | project_id | GCP project ID |
 | service_accounts | List of service accounts created |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+
+## Requirements
+This module needs some command line utils to be installed:
+  * curl
+  * jq
+  * dig
+  * xargs
 
 ## License
 
