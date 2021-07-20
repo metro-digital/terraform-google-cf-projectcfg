@@ -14,14 +14,14 @@
 
 repos:
 - repo: https://github.com/antonbabenko/pre-commit-terraform
-  rev: v1.48.0 # Get the latest from: https://github.com/antonbabenko/pre-commit-terraform/releases
+  rev: v1.50.0 # Get the latest from: https://github.com/antonbabenko/pre-commit-terraform/releases
   hooks:
     - id: terraform_fmt
     - id: terraform_tflint
     - id: terraform_tfsec
     - id: terraform_docs
 - repo: https://github.com/thlorenz/doctoc
-  rev: v2.0.0  # substitute a tagged version
+  rev: v2.0.1  # substitute a tagged version
   hooks:
     - id: doctoc
       args: ['--github', '--title', '## Table of Contents', '--update-only']
