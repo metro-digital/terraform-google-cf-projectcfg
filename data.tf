@@ -36,10 +36,16 @@ locals {
   }
 }
 
+data "google_client_config" "current" {
+}
+
 # active IAM roles
 data "external" "active-roles" {
   program = ["bash", "${path.module}/get-active-roles.sh"]
-  query   = { project_id = data.google_project.project.project_id }
+  query = {
+    project_id   = data.google_project.project.project_id
+    access_token = data.google_client_config.current.access_token
+  }
 }
 
 locals {

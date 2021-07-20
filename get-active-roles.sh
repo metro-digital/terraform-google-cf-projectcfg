@@ -30,9 +30,9 @@ function check_program() {
 }
 
 check_program jq
-check_program gcloud
+check_program curl
 
-eval "$(jq -r '@sh "PROJECT_ID=\(.project_id)"')"
+eval "$(jq -r '@sh "PROJECT_ID=\(.project_id) ACCESS_TOKEN=\(.access_token)"')"
 
-# List active roles in project iam policy
-gcloud projects get-iam-policy "$PROJECT_ID" --flatten "bindings[].role" --format "json" | jq -c '{roles: . | join(",")}'
+curl -H "Authorization: Bearer $ACCESS_TOKEN" -X POST \
+  "https://cloudresourcemanager.googleapis.com/v3/projects/$PROJECT_ID:getIamPolicy" | jq -c '{roles: [.bindings[].role] | join(",")}'
