@@ -16,7 +16,7 @@
 set -e
 set -u
 
-# Helpers 
+# Helpers
 TEXT_BOLD="$(tput bold)"
 TEXT_COLOR_RED="$(tput setaf 1)"
 TEXT_COLOR_MAGENTA="$(tput setaf 5)"
@@ -139,7 +139,7 @@ if [ "${MODE:-notset}" = "notset" ]
 then
 	log_error "Missing MODE - Set -m parameter!"
 	exit 1
-else 
+else
 	if [ "$MODE" = "terraform" ]
 	then
 		check_program terraform
@@ -190,14 +190,14 @@ cat <<-EOF
 
 	+-------------------------------------------------------------------------------------------------------+
 	| Project configuration bootstrap                                                                       |
-	+-------------------------------------------------------------------------------------------------------+																   
+	+-------------------------------------------------------------------------------------------------------+
 
 	This script will bootstrap the project '${GCP_PROJECT_NAME}' (ID: ${GCP_PROJECT_ID}) for $MODE
-	
+
 	Currently active gcloud account: ${ACTIVE_GCLOUD_ACCOUNT}
 	Detected Manager group: ${IAM_MANAGER_GROUP#group:}
 	Detected Developer group: ${IAM_DEVELOPER_GROUP#group:}
-	
+
 	The following ressources will be created (if not existing):
 	    Service Account: ${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com
 	    GCS Bucket: gs://$GCS_BUCKET

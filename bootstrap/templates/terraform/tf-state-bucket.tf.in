@@ -14,7 +14,7 @@
 
 module "tf-state-bucket" {
   source     = "github.com/metro-digital/terraform-google-cf-bucket.git?ref=latest"
-  
+
   project_id     = module.project-cfg.project_id
   name           = "${GCS_BUCKET}"
   location       = "EU"
@@ -32,4 +32,4 @@ module "tf-state-bucket" {
       }
     }
   ]
-} 
+}

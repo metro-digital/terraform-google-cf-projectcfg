@@ -19,12 +19,12 @@ You can grant project level permissions to a service account using the `roles` i
 module "project-cfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
-  
+
   # ...
 
   # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
   service_accounts = {
-    # ...  
+    # ...
     bq-reader = {
       display_name = "BigQuery Reader"
       iam = {}    # see comment below!
@@ -65,7 +65,7 @@ module "project-cfg" {
 
   # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
   service_accounts = {
-    # ...  
+    # ...
     bq-reader = {
       display_name = "BigQuery Reader"
       iam = {
@@ -76,7 +76,7 @@ module "project-cfg" {
     }
     # ...
   }
-    
+
   # Grant BigQuery permissions to SA
   "roles" = {
     # ...
