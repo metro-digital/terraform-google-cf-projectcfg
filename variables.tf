@@ -164,7 +164,9 @@ variable "service_accounts" {
     ```
       service_accounts = {
         deployments = {
-          display_name = "SA used within deployments"
+          display_name = "Deployments"
+          description  = "Service Account to deploy application"
+          description  = "
           iam          = {
             "roles/iam.serviceAccountKeyAdmin" = [
               "group:deployment-admins@metronom.com"
@@ -172,7 +174,8 @@ variable "service_accounts" {
           }
         }
         bq-reader = {
-          display_name = "BigQuery Reader for App XYZ"
+          display_name = "BigQuery Reader"
+          description  = "Service Account for BigQuery Reader for App XYZ"
           iam          = {} # No special Service Account resource IAM permissions
         }
       }
@@ -182,6 +185,7 @@ variable "service_accounts" {
 
   type = map(object({
     display_name = string
+    description  = optional(string)
     iam          = map(list(string))
   }))
 

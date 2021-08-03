@@ -13,6 +13,7 @@
 # limitations under the License.
 
 terraform {
+  experiments = [module_variable_optional_attrs]
   required_providers {
     google = {
       source  = "hashicorp/google"
