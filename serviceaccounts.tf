@@ -19,6 +19,7 @@ resource "google_service_account" "service_accounts" {
   account_id   = each.key
   project      = data.google_project.project.project_id
   display_name = each.value.display_name
+  description  = each.value.description
 }
 
 data "google_iam_policy" "service_accounts" {
