@@ -57,7 +57,13 @@ resource "google_compute_network" "default" {
   description             = "Default VPC network for the project"
   project                 = data.google_project.project.project_id
   auto_create_subnetworks = false
-  depends_on              = [google_project_service.project]
+  # ensure necessary services are enabled and permissions granted
+  depends_on = [
+    google_project_service.project,
+    google_project_iam_binding.roles,
+    google_project_iam_custom_role.custom_roles,
+    google_project_iam_binding.custom_roles
+  ]
 }
 
 # create a default subnet in each enabled region
