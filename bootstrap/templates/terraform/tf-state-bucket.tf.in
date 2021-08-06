@@ -13,22 +13,22 @@
 # limitations under the License.
 
 module "tf-state-bucket" {
-  source     = "github.com/metro-digital/terraform-google-cf-bucket.git?ref=latest"
+  source = "metro-digital/cf-bucket/google"
 
   project_id     = module.project-cfg.project_id
   name           = "${GCS_BUCKET}"
   location       = "EU"
   storage_class  = "MULTI_REGIONAL"
   uniform_access = true
-  versioning                  = true
+  versioning     = true
 
   lifecycle_rules = [
     {
       action = {
-        type          = "Delete"
+        type = "Delete"
       },
       condition = {
-        num_newer_versions                   = 30
+        num_newer_versions = 30
       }
     }
   ]

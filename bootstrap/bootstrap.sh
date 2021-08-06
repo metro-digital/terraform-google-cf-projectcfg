@@ -42,7 +42,7 @@ function print_usage_and_exit()
     cat <<-END_OF_DOC
 		Cloud Foundation Project config bootstrapper
 		--
-		Call: $0 -m <MODE> -p <GCP_PROJECT_ID> [-s <SA_NAME>] [-s <GCS_BUCKET_NAME>] [-o <DIR_PATH>]
+		Call: $0 -m <MODE> -p <GCP_PROJECT_ID> [-s <SA_NAME>] [-b <GCS_BUCKET_NAME>] [-o <DIR_PATH>]
 		  -m 	MODE can be terraform or terragrunt
 		  -p	GCP Project ID
 		  -s	The Service Account name (default: terraform-iac-pipeline)
@@ -317,6 +317,14 @@ do
 	mkdir -p "${TARGET_DIR}"
 	envsubst <$SOURCE_FILE >$TARGET_PATH
 done
+
+echo "Rewrite generated files in canonical format..."
+if [ "$MODE" = "terraform" ]
+then
+	( cd $TARGET_DIR && terraform fmt -recursive )
+else
+	( cd $TARGET_DIR && terragrunt hclfmt )
+fi
 
 FULL_SA_ACCOUNT_FILE="$(realpath ${OUTPUT_DIR}/account.json)"
 echo "${TEXT_COLOR_MAGENTA}Generated IaC code files in '${OUTPUT_DIR}' - please check them out!${TEXT_ALL_OFF}"
