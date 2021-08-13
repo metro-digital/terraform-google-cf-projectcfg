@@ -50,6 +50,15 @@ variable "enabled_services" {
 /* Network                                                                                        */
 /*                                                                                                */
 /**************************************************************************************************/
+variable "skip_default_vpc_creation" {
+  description = <<-EOD
+    When set to true the module will not create the default VPC or any
+    related resource like NAT Gateway or serverless VPC access configuration.
+  EOD
+  type        = bool
+  default     = false
+}
+
 variable "vpc_regions" {
   description = <<-EOD
     Enabled regions and configuration

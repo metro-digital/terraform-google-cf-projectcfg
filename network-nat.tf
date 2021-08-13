@@ -17,7 +17,7 @@ locals {
   nat_config_regions = {
     for r in keys(var.vpc_regions) : r => [
       for i in range(1, var.vpc_regions[r].nat + 1) : format("%s-%04d", r, i)
-    ] if var.vpc_regions[r].nat > 0
+    ] if var.vpc_regions[r].nat > 0 && !var.skip_default_vpc_creation
   }
 
   nat_ips = toset(flatten([for region, ips in local.nat_config_regions : ips]))
@@ -30,7 +30,7 @@ resource "google_compute_router" "router" {
   name    = "router-${each.key}"
   project = data.google_project.project.project_id
   region  = each.key
-  network = google_compute_network.default.self_link
+  network = google_compute_network.default[0].self_link
 }
 
 resource "google_compute_address" "address" {

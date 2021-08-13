@@ -14,10 +14,11 @@
 
 resource "google_compute_firewall" "allow-all-internal" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-all-internal"
   description = "Allows all traffic from inside VPC"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {
@@ -29,10 +30,11 @@ resource "google_compute_firewall" "allow-all-internal" {
 
 resource "google_compute_firewall" "allow-icmp-metro-public" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-icmp-metro-public"
   description = "Allows ICMP (ping) traffic from all known Metro IP Addresses (public)"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {
@@ -48,10 +50,11 @@ resource "google_compute_firewall" "allow-icmp-metro-public" {
 
 resource "google_compute_firewall" "allow-http-metro-public" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-http-metro-public"
   description = "Allows HTTP traffic from all known Metro IP Addresses (public)"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {
@@ -68,10 +71,11 @@ resource "google_compute_firewall" "allow-http-metro-public" {
 
 resource "google_compute_firewall" "allow-https-metro-public" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-https-metro-public"
   description = "Allows HTTPS traffic from all known Metro IP Addresses (public)"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {
@@ -88,10 +92,11 @@ resource "google_compute_firewall" "allow-https-metro-public" {
 
 resource "google_compute_firewall" "allow-ssh-metro-public" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-ssh-metro-public"
   description = "Allows SSH traffic from all known Metro IP Addresses (public)"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {
@@ -108,10 +113,11 @@ resource "google_compute_firewall" "allow-ssh-metro-public" {
 
 resource "google_compute_firewall" "allow-ssh-iap" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-ssh-iap"
   description = "Allows SSH traffic from all known IP Addresses used by Cloud Identity-Aware Proxy"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {
@@ -128,10 +134,11 @@ resource "google_compute_firewall" "allow-ssh-iap" {
 
 resource "google_compute_firewall" "allow-all-iap" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name        = "fw-allow-all-iap"
   description = "Allows ALL traffic from all known IP Addresses used by Cloud Identity-Aware Proxy"
-  network     = google_compute_network.default.name
+  network     = google_compute_network.default[0].name
   project     = data.google_project.project.project_id
 
   allow {

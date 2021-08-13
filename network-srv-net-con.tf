@@ -14,6 +14,7 @@
 
 resource "google_compute_global_address" "google_managed_services" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name          = "google-managed-services"
   description   = "IP address block used for Google Private IP connectivity"
@@ -21,7 +22,7 @@ resource "google_compute_global_address" "google_managed_services" {
   address_type  = "INTERNAL"
   address       = local.default_vpc_private_peering.address
   prefix_length = local.default_vpc_private_peering.prefix_length
-  network       = google_compute_network.default.self_link
+  network       = google_compute_network.default[0].self_link
   project       = data.google_project.project.project_id
 
   # ensure we have necessary permissions
@@ -34,8 +35,9 @@ resource "google_compute_global_address" "google_managed_services" {
 
 resource "google_service_networking_connection" "service_networking" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
-  network                 = google_compute_network.default.self_link
+  network                 = google_compute_network.default[0].self_link
   service                 = "servicenetworking.googleapis.com"
-  reserved_peering_ranges = [google_compute_global_address.google_managed_services.name]
+  reserved_peering_ranges = [google_compute_global_address.google_managed_services[0].name]
 }
