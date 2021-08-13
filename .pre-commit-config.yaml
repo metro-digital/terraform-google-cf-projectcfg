@@ -14,7 +14,7 @@
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.0.1
+  rev: 38b88246ccc552bffaaf54259d064beeee434539  # frozen: v4.0.1
   hooks:
     - id: detect-private-key
     - id: end-of-file-fixer
@@ -22,14 +22,14 @@ repos:
     - id: mixed-line-ending
       args: ['--fix', 'lf']
 - repo: https://github.com/antonbabenko/pre-commit-terraform
-  rev: v1.50.0 # Get the latest from: https://github.com/antonbabenko/pre-commit-terraform/releases
+  rev: d032af694c17201cfcbd4d5ac106dd37926d39f9  # frozen: v1.50.0
   hooks:
     - id: terraform_fmt
     - id: terraform_tflint
     - id: terraform_tfsec
     - id: terraform_docs
 - repo: https://github.com/thlorenz/doctoc
-  rev: v2.0.1  # substitute a tagged version
+  rev: 0197e9af4573a009d7cb0f1c03c252d7d61d1a7e  # frozen: v2.0.1
   hooks:
     - id: doctoc
       args: ['--github', '--title', '## Table of Contents', '--update-only']
