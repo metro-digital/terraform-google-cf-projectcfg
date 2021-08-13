@@ -52,6 +52,7 @@ locals {
 
 resource "google_compute_network" "default" {
   provider = google
+  count    = var.skip_default_vpc_creation ? 0 : 1
 
   name                    = "default"
   description             = "Default VPC network for the project"
@@ -69,29 +70,30 @@ resource "google_compute_network" "default" {
 # create a default subnet in each enabled region
 resource "google_compute_subnetwork" "default" {
   provider = google
-  for_each = var.vpc_regions
+  for_each = var.skip_default_vpc_creation ? {} : var.vpc_regions
 
   name                     = "default-${each.key}"
   description              = "Default subnet in ${each.key}"
   region                   = each.key
   private_ip_google_access = true
   ip_cidr_range            = local.default_vpc_subnets[each.key]
-  network                  = google_compute_network.default.name
+  network                  = google_compute_network.default[0].name
   project                  = data.google_project.project.project_id
   depends_on               = [google_project_service.project]
 }
 
 resource "google_vpc_access_connector" "default" {
   provider = google
-  for_each = { for r in keys(var.vpc_regions) : r => {
-    cidr = local.default_vpc_subnet_connectors[r]
+  for_each = var.skip_default_vpc_creation ? {} : {
+    for r in keys(var.vpc_regions) : r => {
+      cidr = local.default_vpc_subnet_connectors[r]
   } if var.vpc_regions[r].vpcaccess }
 
   name          = "vpcaccess-${each.key}"
   region        = each.key
   ip_cidr_range = each.value.cidr
   project       = data.google_project.project.project_id
-  network       = google_compute_network.default.name
+  network       = google_compute_network.default[0].name
   depends_on = [
     google_project_service.project,
     google_compute_subnetwork.default
