@@ -15,12 +15,13 @@
 # NAT-related resources
 locals {
   nat_config_regions = {
-    for r in keys(var.vpc_regions) : r => [
-      for i in range(1, var.vpc_regions[r].nat + 1) : format("%s-%04d", r, i)
-    ] if var.vpc_regions[r].nat > 0 && !var.skip_default_vpc_creation
+    for r in keys(var.vpc_regions) : r => {
+      "ips" : [for i in range(1, var.vpc_regions[r].nat + 1) : format("%s-%04d", r, i)],
+      "min_ports_per_vm" : coalesce(var.vpc_regions[r].nat_min_ports_per_vm, 0),
+    } if var.vpc_regions[r].nat > 0 && !var.skip_default_vpc_creation
   }
 
-  nat_ips = toset(flatten([for region, ips in local.nat_config_regions : ips]))
+  nat_ips = toset(flatten([for region, config in local.nat_config_regions : config.ips]))
 }
 
 resource "google_compute_router" "router" {
@@ -52,6 +53,7 @@ resource "google_compute_router_nat" "nat" {
   project                            = data.google_project.project.project_id
   region                             = each.key
   nat_ip_allocate_option             = "MANUAL_ONLY"
-  nat_ips                            = [for ip in each.value : google_compute_address.address[ip].self_link]
+  nat_ips                            = [for ip in each.value.ips : google_compute_address.address[ip].self_link]
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES"
+  min_ports_per_vm                   = each.value.min_ports_per_vm
 }

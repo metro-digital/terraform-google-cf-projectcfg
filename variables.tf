@@ -79,8 +79,9 @@ variable "vpc_regions" {
   EOD
 
   type = map(object({
-    vpcaccess = bool
-    nat       = number
+    vpcaccess            = bool
+    nat                  = number
+    nat_min_ports_per_vm = optional(number)
   }))
 
   default = {
