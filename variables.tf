@@ -67,12 +67,14 @@ variable "vpc_regions" {
     ```
     vpc_regions = {
       europe-west1 = {
-        vpcaccess = true    # Enable serverless VPC access for this region
-        nat       = 2       # Create a Cloud NAT with 2 (static) external IP addresses (IPv4) in this region
+        vpcaccess            = true    # Enable serverless VPC access for this region
+        nat                  = 2       # Create a Cloud NAT with 2 (static) external IP addresses (IPv4) in this region
+        nat_min_ports_per_vm = 64      # Minimum number of ports allocated to a VM from the NAT defined above (Note: this option is optional, but must be defined for all the regions if it is set for at least one)
       },
       europe-west3 = {
-        vpcaccess = false   # Disable serverless VPC access for this region
-        nat       = 0       # No Cloud NAT for this region
+        vpcaccess            = false   # Disable serverless VPC access for this region
+        nat                  = 0       # No Cloud NAT for this region
+        nat_min_ports_per_vm = 0       # Since the `nat_min_ports_per_vm` was set for the region above, its definition is required here.
       },
     }
     ```
