@@ -171,7 +171,8 @@ else
 	GCP_PROJECT_NAME="$(gcloud projects list --format='value(name)' --filter=\"$GCP_PROJECT_ID\")"
 	if [ "${GCP_PROJECT_NAME}" = "" ]
 	then
-		log_error "Unable to find project with given project ID!"
+		log_error "Unable to find project with given project ID '${GCP_PROJECT_NAME}'!"
+		log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}' - does this account have the manager role on the project?"
 		exit 1
 	fi
 fi
