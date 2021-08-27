@@ -56,4 +56,9 @@ resource "google_compute_router_nat" "nat" {
   nat_ips                            = [for ip in each.value.ips : google_compute_address.address[ip].self_link]
   source_subnetwork_ip_ranges_to_nat = "ALL_SUBNETWORKS_ALL_PRIMARY_IP_RANGES"
   min_ports_per_vm                   = each.value.min_ports_per_vm
+
+  log_config {
+    enable = true
+    filter = "ERRORS_ONLY"
+  }
 }
