@@ -203,3 +203,19 @@ variable "service_accounts" {
 
   default = {}
 }
+
+variable "non_authoritative_roles" {
+  description = <<-EOD
+    List of roles (regex) to exclude from authoritative project IAM handling.
+    Roles listed here can have bindings outside of this module.
+
+    Example:
+    ```
+    non_authoritative_roles = [
+      "roles/container.hostServiceAgentUser"
+    ]
+    ```
+  EOD
+  type        = list(string)
+  default     = []
+}

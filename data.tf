@@ -49,15 +49,18 @@ data "external" "active-roles" {
 }
 
 locals {
-  role_excludes = [
-    # See: https://cloud.google.com/iam/docs/service-agents
-    "\\.serviceAgent$",
-    "\\.ServiceAgent$",
-    "^roles/cloudbuild.builds.builder$",
-    "^roles/securitycenter.notificationServiceAgent$",
-    "^roles/monitoring.notificationServiceAgent$",
-    "^roles/firebaserules.system$"
-  ]
+  role_excludes = compact(concat(
+    var.non_authoritative_roles,
+    [
+      # See: https://cloud.google.com/iam/docs/service-agents
+      "\\.serviceAgent$",
+      "\\.ServiceAgent$",
+      "^roles/cloudbuild.builds.builder$",
+      "^roles/securitycenter.notificationServiceAgent$",
+      "^roles/monitoring.notificationServiceAgent$",
+      "^roles/firebaserules.system$"
+    ]
+  ))
 
   # Split the list of active roles from the external data source
   active_roles_splitted = split(",", data.external.active-roles.result.roles)
