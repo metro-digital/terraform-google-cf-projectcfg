@@ -26,11 +26,15 @@ This module requires [terraform] version >1.0
 ## Features
 
 ### VPC Network
+
 A VPC network will be created in the requested regions. [Private Google Access] will be enabled, so you
 can connect to Google Services without public IPs. [Private services access] is also configured allowing you
 to run services like Cloud SQL with private IPs. It's also possible to configure [Cloud NAT] and [Serverless VPC Access] per region.
 
+For more details please check [docs/DEFAULT-VPC.md](docs/DEFAULT-VPC.md)
+
 ### IAM
+
 This module acts "mostly" authoritative on IAM roles. It aims to configure all IAM and Service Account related resources in a central
 place for easy review and adjustments. All active roles are fetched initially and compared with the roles given via roles input. If a
 role shouldn't be set the module will create an empty resource for this role, means terraform will remove it. This will result in a
@@ -60,6 +64,7 @@ module "project-cfg" {
 
 }
 ```
+
 Please also take a deeper look into the [FAQ] - there are additional examples available.
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
@@ -86,11 +91,13 @@ Please also take a deeper look into the [FAQ] - there are additional examples av
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
 ## Requirements
+
 This module needs some command line utils to be installed:
-  * curl
-  * jq
-  * dig
-  * xargs
+
+- curl
+- jq
+- dig
+- xargs
 
 ## License
 
@@ -101,14 +108,15 @@ This [terraform] module depends on providers from HashiCorp, Inc. which are lice
   * [`hashicorp/external`](https://github.com/hashicorp/terraform-provider-external)
 
 This [terraform] module uses pre-commit hooks which are licensed under MPL-2.0. You can obtain the respective source code here:
-  * [`terraform-linters/tflint`](https://github.com/terraform-linters/tflint)
-  * [`terraform-linters/tflint-ruleset-google`](https://github.com/terraform-linters/tflint-ruleset-google)
 
-[terraform]: https://terraform.io/
-[Private Google Access]: https://cloud.google.com/vpc/docs/configure-private-google-access
-[Serverless VPC Access]: https://cloud.google.com/vpc/docs/configure-serverless-vpc-access
-[Private services access]: https://cloud.google.com/vpc/docs/configure-private-services-access
+- [`terraform-linters/tflint`](https://github.com/terraform-linters/tflint)
+- [`terraform-linters/tflint-ruleset-google`](https://github.com/terraform-linters/tflint-ruleset-google)
+
+[cloud nat]: https://cloud.google.com/nat/docs/overview
+[contributing]: docs/CONTRIBUTING.md
+[faq]: ./docs/FAQ.md
+[private google access]: https://cloud.google.com/vpc/docs/configure-private-google-access
+[private services access]: https://cloud.google.com/vpc/docs/configure-private-services-access
+[serverless vpc access]: https://cloud.google.com/vpc/docs/configure-serverless-vpc-access
 [service agent roles]: https://cloud.google.com/iam/docs/service-agents
-[Cloud NAT]: https://cloud.google.com/nat/docs/overview
-[FAQ]: ./docs/FAQ.md
-[CONTRIBUTING]: docs/CONTRIBUTING.md
+[terraform]: https://terraform.io/

@@ -22,14 +22,14 @@ repos:
     - id: mixed-line-ending
       args: ['--fix', 'lf']
 - repo: https://github.com/antonbabenko/pre-commit-terraform
-  rev: d032af694c17201cfcbd4d5ac106dd37926d39f9  # frozen: v1.50.0
+  rev: 74aa46422e41f7dd6f2df7c029d28cb096989c5b  # frozen: v1.55.0
   hooks:
     - id: terraform_fmt
     - id: terraform_tflint
     - id: terraform_tfsec
     - id: terraform_docs
 - repo: https://github.com/thlorenz/doctoc
-  rev: 0197e9af4573a009d7cb0f1c03c252d7d61d1a7e  # frozen: v2.0.1
+  rev: 3ce6bef59b0a6ef79c9d8ba28c31f108acaadb63  # frozen: v2.1.0
   hooks:
     - id: doctoc
       args: ['--github', '--title', '## Table of Contents', '--update-only']
