@@ -32,8 +32,8 @@ locals {
     europe-west1  = "172.18.0.0/28"
     europe-west2  = "172.18.0.16/28"
     europe-west3  = "172.18.0.32/28"
-    europe-west4  = "172.18.0.48/20"
-    europe-north1 = "172.18.0.64/20"
+    europe-west4  = "172.18.0.48/28"
+    europe-north1 = "172.18.0.64/28"
   }
 
   default_vpc_private_peering = {
