@@ -21,7 +21,7 @@ This module allows you to configure a Google Cloud Platform project.
 
 ## Compatibility
 
-This module requires [terraform] version >0.14
+This module requires [terraform] version >1.0
 
 ## Features
 
