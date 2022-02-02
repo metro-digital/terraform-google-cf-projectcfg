@@ -6,6 +6,7 @@
 
 - [IAM](#iam)
   - [How to grant project level permissions to a service account](#how-to-grant-project-level-permissions-to-a-service-account)
+  - [How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation)
   - [Can I use GKE Workload Identify with this module?](#can-i-use-gke-workload-identify-with-this-module)
 - [terraform](#terraform)
   - [How to prepare a new generated project for this module?](#how-to-prepare-a-new-generated-project-for-this-module)
@@ -26,7 +27,7 @@ module "project-cfg" {
 
   # ...
 
-  # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
+  # Create a Service Account
   service_accounts = {
     # ...
     bq-reader = {
@@ -51,8 +52,44 @@ module "project-cfg" {
 ```
 
 Please note the empty `iam` parameter inside the Service Account definition. This is used for IAM rules applied to the
-Service Account as resource. See [GKE Workload Identify example](#can-i-use-gke-workload-identify-with-this-module) how
-to use this.
+Service Account as resource. See [How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation)
+or [Can I use GKE Workload Identify with this module?](#can-i-use-gke-workload-identify-with-this-module) how to use this.
+
+### How can I allow Service Account impersonation?
+You can grant some other member permissions to impersonate a specific service account by granting the role `roles/iam.serviceAccountTokenCreator`.
+
+This role can be granted on
+  * project level IAM policy
+  * resource level IAM policy
+
+Resource level IAM policy means the IAM policy assigned to a specific service account threading the service account as a resource.
+**It's recommended to grant the role on resource level** to ensure the given member can only impersonate specific service accounts.
+Granting it on project level will allow the member to impersonate all service accounts within the project!
+
+```hcl
+module "project-cfg" {
+  source     = "metro-digital/cf-projectcfg/google"
+  project_id = "metro-cf-example-ex1-e8v"
+
+  # ...
+
+  # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
+  service_accounts = {
+    # ...
+    some-sa = {
+      display_name = "Some example Service Account"
+      iam = {
+        "roles/iam.serviceAccountTokenCreator" = [
+          "group:example-group@metronom.com"
+        ]
+      }
+    }
+    # ...
+  }
+
+  # ...
+}
+```
 
 ### Can I use GKE Workload Identify with this module?
 
