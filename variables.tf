@@ -1,4 +1,4 @@
-# Copyright 2021 METRO Digital GmbH
+# Copyright 2022 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -107,12 +107,12 @@ variable "roles" {
     ```
     roles = {
       "roles/bigquery.admin" = [
-        "group:example-group@metronom.com",
-        "user:example-user@metronom.com",
+        "group:customer.project-role@cloudfoundation.metro.digital",
+        "user:some.user@metro.digital",
         "serviceAccount:exmple-sa@example-prj..iam.gserviceaccount.com"
       ],
       "roles/cloudsql.admin" = [
-        "group:another-example-group@metronom.com",
+        "group:customer.project-role@cloudfoundation.metro.digital",
       ]
     }
     ```
@@ -146,7 +146,7 @@ variable "custom_roles" {
           "appengine.applications.create",
         ]
         members = [
-          "group:example-grp@metronom.com"
+          "group:customer.project-role@cloudfoundation.metro.digital",
         ]
       }
     }
@@ -167,10 +167,28 @@ variable "service_accounts" {
   description = <<-EOD
     Service accounts to create for this project.
 
-    **Optional:** IAM permissions assigned to this Service Account as a *resource*. This means who else can do something
+    **`display_name`:** Human-readable name shown in Google Cloud Console
+
+    **`description` (optional):** Human-readable description shown in Google Cloud Console
+
+    **`iam` (optional):** IAM permissions assigned to this Service Account as a *resource*. This means who else can do something
     on this Service Account. An example: if you grant `roles/iam.serviceAccountKeyAdmin` to a group here, this group
     will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to use BigQuery
-    you need to use the `roles` input to do so.
+    you need to use the project-wide `roles` input to do so.
+
+    **`iam_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative policy with
+    its current value as defined in the Google Cloud Platform. Example use case: Composer 2 adds values to
+    `roles/iam.workloadIdentityUser` binding when environment is created or updated. Thus, you might want to automatically
+    import those permissions.
+
+    **`github_action_repositories` (optional):** You can list GitHub repositories (format: user/repo) here. Each repository
+    given gains permissions to authenticate as this service account using Workload Identity Federation.
+    This allows any GitHub Action pipeline to use this service account without the need for service account keys.
+    For details see documentation for action [`google-github-actions/auth`](https://github.com/google-github-actions/auth).
+
+    **Remark:** If you configure `github_action_repositories`, the module binds a member for each repository to the role
+    `roles/iam.workloadIdentityUser` inside the service account's IAM policy. This is done *regardless of weather
+    or not* you list this role in the `iam_non_authoritative_roles` key.
 
     Example:
     ```
@@ -181,14 +199,26 @@ variable "service_accounts" {
           description  = "
           iam          = {
             "roles/iam.serviceAccountKeyAdmin" = [
-              "group:deployment-admins@metronom.com"
+              "group:customer.project-role@cloudfoundation.metro.digital",
             ]
           }
+          github_action_repositories = [
+            "my-user-or-organisation/my-great-repo"
+          ]
         }
         bq-reader = {
           display_name = "BigQuery Reader"
           description  = "Service Account for BigQuery Reader for App XYZ"
           iam          = {} # No special Service Account resource IAM permissions
+        }
+        composer = {
+          display_name                = "Composer"
+          description                 = "Service Account to run Composer 2"
+          iam                         = {} # No special Service Account resource IAM permissions
+          iam_non_authoritative_roles = [
+            # maintained by Composer service - imports any existing value
+            "roles/iam.workloadIdentityUser"
+          ]
         }
       }
     }
@@ -196,9 +226,11 @@ variable "service_accounts" {
   EOD
 
   type = map(object({
-    display_name = string
-    description  = optional(string)
-    iam          = map(list(string))
+    display_name                = string
+    description                 = optional(string)
+    iam                         = map(list(string))
+    iam_non_authoritative_roles = optional(list(string))
+    github_action_repositories  = optional(list(string))
   }))
 
   default = {}

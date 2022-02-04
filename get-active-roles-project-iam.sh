@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2021 METRO Digital GmbH
+# Copyright 2022 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,5 +34,6 @@ check_program curl
 
 eval "$(jq -r '@sh "PROJECT_ID=\(.project_id) ACCESS_TOKEN=\(.access_token)"')"
 
-curl -H "Authorization: Bearer $ACCESS_TOKEN" -X POST \
-  "https://cloudresourcemanager.googleapis.com/v3/projects/$PROJECT_ID:getIamPolicy" | jq -c '{roles: [.bindings[].role] | join(",")}'
+curl -H "Authorization: Bearer $ACCESS_TOKEN" -s -X POST \
+  "https://cloudresourcemanager.googleapis.com/v3/projects/$PROJECT_ID:getIamPolicy" | \
+  jq -c '{roles: [.bindings[].role] | join(",")}'

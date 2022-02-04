@@ -1,4 +1,4 @@
-# Copyright 2021 METRO Digital GmbH
+# Copyright 2022 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ data "google_client_config" "current" {
 
 # active IAM roles
 data "external" "active-roles" {
-  program = ["bash", "${path.module}/get-active-roles.sh"]
+  program = ["bash", "${path.module}/get-active-roles-project-iam.sh"]
   query = {
     project_id   = data.google_project.project.project_id
     access_token = data.google_client_config.current.access_token
