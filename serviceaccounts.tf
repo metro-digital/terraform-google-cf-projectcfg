@@ -1,4 +1,4 @@
-# Copyright 2021 METRO Digital GmbH
+# Copyright 2022 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,19 +22,96 @@ resource "google_service_account" "service_accounts" {
   description  = each.value.description
 }
 
+locals {
+  non_authoritative_roles = {
+    for binding in flatten([
+      for sa, config in var.service_accounts : [
+        for role in config.iam_non_authoritative_roles : {
+          format("%s#%s", sa, role) = {
+            sa           = sa
+            role         = role
+            sa_unique_id = google_service_account.service_accounts[sa].unique_id
+          }
+        }
+      ] if config.iam_non_authoritative_roles != null
+    ]) : keys(binding)[0] => binding[keys(binding)[0]]
+  }
+}
+
+data "external" "sa_non_authoritative_role_members" {
+  for_each = local.non_authoritative_roles
+
+  program = ["bash", "${path.module}/get-sa-iam-role-members.sh"]
+  query = {
+    project_id   = data.google_project.project.project_id
+    access_token = data.google_client_config.current.access_token
+    sa_unique_id = each.value.sa_unique_id
+    role         = each.value.role
+  }
+
+  depends_on = [
+    google_service_account.service_accounts
+  ]
+}
+
+# Please check service_accounts variable description for details
 data "google_iam_policy" "service_accounts" {
   provider = google
   for_each = var.service_accounts
 
+  # authoritative roles without roles/iam.workloadIdentityUser
   dynamic "binding" {
-    for_each = each.value.iam
-    iterator = display_name
+    for_each = {
+      for role, members in each.value.iam : role => members if role != "roles/iam.workloadIdentityUser"
+    }
+    iterator = binding
 
     content {
-      role    = display_name.key
-      members = display_name.value
+      role    = binding.key
+      members = binding.value
     }
   }
+
+  # non-authoritative roles without roles/iam.workloadIdentityUser
+  dynamic "binding" {
+    for_each = {
+      for non_authoritiv_role, role_config in local.non_authoritative_roles :
+      non_authoritiv_role => role_config if role_config.sa == each.key && non_authoritiv_role != "roles/iam.workloadIdentityUser"
+    }
+    iterator = binding
+
+    content {
+      role    = binding.value.role
+      members = split(",", data.external.sa_non_authoritative_role_members[binding.key].result.members)
+    }
+  }
+
+  binding {
+    members = compact(concat(
+      # GitHub repos
+      each.value.github_action_repositories != null ? [
+        for repo in each.value.github_action_repositories : format(
+          "principalSet://iam.googleapis.com/%s/attribute.repository/%s",
+          google_iam_workload_identity_pool.github-actions[0].name,
+          repo
+        )
+      ] : [],
+      # if roles/iam.workloadIdentityUser is given by user in the authoritative iam section pick this data
+      contains(keys(each.value.iam), "roles/iam.workloadIdentityUser") ? each.value.iam["roles/iam.workloadIdentityUser"] :
+      # else pick existing data fetched via script if role exists in the authoritative iam parameter
+      # reading from the local instead of each.value.iam_non_authoritative_roles as this could be null
+      # and the local already has null handling
+      contains(keys(local.non_authoritative_roles), "${each.key}#roles/iam.workloadIdentityUser") ? split(
+        ",", data.external.sa_non_authoritative_role_members["${each.key}#roles/iam.workloadIdentityUser"].result.members
+        # otherwise do not pick any data
+      ) : [],
+    ))
+    role = "roles/iam.workloadIdentityUser"
+  }
+
+  depends_on = [
+    google_service_account.service_accounts
+  ]
 }
 
 resource "google_service_account_iam_policy" "service_accounts" {
@@ -43,4 +120,8 @@ resource "google_service_account_iam_policy" "service_accounts" {
 
   service_account_id = google_service_account.service_accounts[each.key].id
   policy_data        = data.google_iam_policy.service_accounts[each.key].policy_data
+
+  depends_on = [
+    google_service_account.service_accounts
+  ]
 }
