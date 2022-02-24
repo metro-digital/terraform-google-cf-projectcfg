@@ -1,3 +1,4 @@
 ---
 exclude:
   - google-compute-enable-vpc-flow-logs
+  - google-compute-no-public-ingress

@@ -11,6 +11,8 @@
 - [terraform](#terraform)
   - [How to prepare a new generated project for this module?](#how-to-prepare-a-new-generated-project-for-this-module)
   - [Error creating Network: googleapi: Error 409: The resource 'projects/<projectid>/global/networks/default' already exists](#error-creating-network-googleapi-error-409-the-resource-projectsprojectidglobalnetworksdefault-already-exists)
+- [GitHub](#github)
+  - [How to use Workload Identity Federation with GitHub Actions](#how-to-use-workload-identity-federation-with-github-actions)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -32,7 +34,7 @@ module "project-cfg" {
     # ...
     bq-reader = {
       display_name = "BigQuery Reader"
-      iam = {}    # see comment below!
+      iam          = {}    # see comment below!
     }
     # ...
   }
@@ -78,7 +80,7 @@ module "project-cfg" {
     # ...
     some-sa = {
       display_name = "Some example Service Account"
-      iam = {
+      iam          = {
         "roles/iam.serviceAccountTokenCreator" = [
           "group:example-group@metronom.com"
         ]
@@ -101,7 +103,7 @@ Example:
 
 ```hcl
 module "project-cfg" {
-  source     = "git@github.com:metro-digital-inner-source/terraform-google-metrocf-projectcfg.git"
+  source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
 
   # ...
@@ -109,13 +111,9 @@ module "project-cfg" {
   # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
   service_accounts = {
     # ...
-    bq-reader = {
-      display_name = "BigQuery Reader"
-      iam = {
-        "roles/iam.workloadIdentityUser" = [
-          "serviceAccount:metro-cf-example-ex1-e8v.svc.id.goog[default/bq]"
-        ]
-      }
+    some-pipeline-account = {
+      display_name = "Used for GitHub Action pipeline in repository <someorg>/<somerepo>"
+      iam          = {}
     }
     # ...
   }
@@ -147,3 +145,63 @@ For some reason there's already a network called default in your project.
 Option A: Delete the network: terraform state import
 
 Option B: Import the network into your terraform state (may also result in a delete at next terraform run depending on the networks configuration)
+
+## GitHub
+
+### How to use Workload Identity Federation with GitHub Actions
+
+The module allows you to configure the authentication within GitHub actions using Workload Identity Federation. To allow
+the the use of a service account within a GitHub workflow run, you need to set the repository as a parameter for the service
+account:
+
+```hcl
+module "project-cfg" {
+  source     = "metro-digital/cf-projectcfg/google"
+  project_id = "metro-cf-example-ex1-e8v"
+
+  # ...
+
+  # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
+  service_accounts = {
+    # ...
+    terraform-iac-pipeline = {
+      display_name = "Service account used in IaC pipelines"
+      iam = {}
+    }
+    github_action_repositories = [
+      "metro-digital-inner-source/<your repository>"
+    ]
+    # ...
+  }
+  # ...
+}
+```
+
+After that, you can use this [GitHub action](https://github.com/google-github-actions/auth) to authenticate inside your flow:
+
+```yaml
+jobs:
+  terraform:
+    name: terraform
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: dev
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      # ...
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        # Make sure to reference the most recent commit!
+        uses: 'google-github-actions/auth@v0'
+        with:
+          workload_identity_provider: 'projects/<project number>/locations/global/workloadIdentityPools/github-actions/providers/github'
+          service_account: 'terraform-iac-pipeline@metro-cf-example-ex1-e8v.iam.gserviceaccount.com'
+      # ...
+```

@@ -13,9 +13,31 @@
 # limitations under the License.
 
 locals {
+  # Check if ANY given service account has a GitHub action repository configured.
   github_actions_enabled = length(compact([
     for sa, config in var.service_accounts : sa if can(length(config.github_action_repositories) > 0)
   ])) > 0 ? 1 : 0
+
+  # We also need to enable some services to make the Workload Identity Federation setup possible.
+  github_actions_needed_services = local.github_actions_enabled > 0 ? toset([
+    "iam.googleapis.com",
+    "cloudresourcemanager.googleapis.com",
+    "iamcredentials.googleapis.com",
+    "sts.googleapis.com"
+  ]) : toset([])
+}
+
+resource "google_project_service" "github-actions" {
+  project  = data.google_project.project.project_id
+  for_each = local.github_actions_needed_services
+  service  = each.key
+
+  # The user may enable/use the needed services somewhere else, too!
+  # Hence, we are never disabling them again, even if we initially enabled them here.
+  # Keeping the service enabled is way less dangerous than disabling them, even if
+  # we do not have a reason to keep them enabled any longer. Users can still disable
+  # via CLI / UI if needed.
+  disable_on_destroy = false
 }
 
 resource "google_iam_workload_identity_pool" "github-actions" {
@@ -28,7 +50,8 @@ resource "google_iam_workload_identity_pool" "github-actions" {
   description               = "Identity pool github actions pipelines"
 
   depends_on = [
-    google_project_iam_binding.roles
+    google_project_iam_binding.roles,
+    google_project_service.github-actions
   ]
 }
 
@@ -50,4 +73,8 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"
   }
+
+  depends_on = [
+    google_iam_workload_identity_pool.github-actions
+  ]
 }
