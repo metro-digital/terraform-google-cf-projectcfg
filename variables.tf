@@ -25,11 +25,11 @@ variable "project_id" {
 variable "enabled_services" {
   description = <<-EOD
     List of GCP enabled services / APIs to enable. Dependencies will be enabled automatically.
-    The modules does not provide a way to disable services (again), if you want to disable services
-    you can do this manual using UI or gcloud CLI.
 
     **Remark**: Google sometimes changes (mostly adding) dependencies and will activate those automatically for your
-    project, means being authoritative on services usually causes a lot of trouble.
+    project. Therefore being authoritative on services usually causes a lot of trouble. The module doesn't provide any
+    option to be authoritative for this reason. By default we are partly authoritative. This can can be controlled
+    by the `enabled_services_disable_on_destroy` flag.
 
     Example:
     ```
@@ -43,6 +43,18 @@ variable "enabled_services" {
   EOD
   type        = list(string)
   default     = []
+}
+
+variable "enabled_services_disable_on_destroy" {
+  description = <<-EOD
+    If true, try to disable a service given via `enabled_services` after its removal from from the list.
+    Defaults to true. May be useful in the event that a project is long-lived but the infrastructure running in
+    that project changes frequently.
+
+    Can result in failing terraform runs if the removed service is a dependency for any other active service.
+  EOD
+  type        = bool
+  default     = true
 }
 
 /**************************************************************************************************/
