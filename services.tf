@@ -16,8 +16,10 @@ locals {
   services = toset(
     distinct(
       concat(
-        # 1. Compute & IAP APIs are enabled by default
+        # 1. These base APIs should be enabled regardless of the usage of the
+        # projectcfg module
         [
+          "iam.googleapis.com",
           "compute.googleapis.com",
           "iap.googleapis.com",
           "servicenetworking.googleapis.com"
