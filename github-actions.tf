@@ -20,7 +20,6 @@ locals {
 
   # We also need to enable some services to make the Workload Identity Federation setup possible.
   github_actions_needed_services = local.github_actions_enabled > 0 ? toset([
-    "iam.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "iamcredentials.googleapis.com",
     "sts.googleapis.com"
