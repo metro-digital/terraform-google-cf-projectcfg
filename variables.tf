@@ -201,8 +201,12 @@ variable "service_accounts" {
     [`google-github-actions/auth`](https://github.com/google-github-actions/auth).
 
     **Remark:** If you configure `github_action_repositories`, the module binds a member for each repository to the role
-    `roles/iam.workloadIdentityUser` inside the service account's IAM policy. This is done *regardless of weather
+    `roles/iam.workloadIdentityUser` inside the service account's IAM policy. This is done *regardless of whether
     or not* you list this role in the `iam_non_authoritative_roles` key.
+
+    **Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principle that is
+    executing the terraform code (most likely your service account used in your pipeline) if you plan to use
+    `github_action_repositories`.
 
     Example:
     ```
@@ -264,4 +268,46 @@ variable "non_authoritative_roles" {
   EOD
   type        = list(string)
   default     = []
+}
+
+variable "essential_contacts" {
+  description = <<-EOD
+    Essential contacts receive configurable notifications from Google Cloud Platform
+    based on selected categories.
+
+    **`language`:** The preferred language for notifications, as an ISO 639-1 language code.
+    See [documentation](https://cloud.google.com/resource-manager/docs/managing-notification-contacts#supported-languages)
+    for a list of supported languages.
+
+    **`categories`:** The categories of notifications that the contact will receive communications for.
+    See [documentation](https://cloud.google.com/resource-manager/docs/managing-notification-contacts#notification-categories)
+    for a list of supported categories.
+
+    **Remark:** The module will enable the essential contacts API automatically once one contact is configured.
+    You still need to grant the role `roles/essentialcontacts.admin` to the principle that is executing
+    the terraform code (most likely your service account used in your pipeline) if you plan to use
+    `github_action_repositories`.
+
+    Example:
+    ```
+    essential_contacts = {
+      "some-group-mailing-list@metro.digital" = {
+        language   = "en"
+        categories = ["ALL"]
+      }
+      "some-other-group-list@metro.digital" = {
+        language   = "en"
+        categories = [
+          "SUSPENSION",
+          "TECHNICAL"
+        ]
+      }
+    }
+    ```
+    EOD
+  type = map(object({
+    language   = string
+    categories = list(string)
+  }))
+  default = {}
 }
