@@ -177,6 +177,8 @@ module "project-cfg" {
 }
 ```
 
+Setting the `github_action_repositories` parameter will create a default A Workload Identity Pool named "github-actions" and a Workload Identity Pool provider, named "GitHub". This is reflected in the code snipped below under `workload_identity_provider`<br>
+You need to set the `permissions` block to grant your id-token the intended permissions.
 After that, you can use this [GitHub action](https://github.com/google-github-actions/auth) to authenticate inside your flow:
 
 ```yaml
