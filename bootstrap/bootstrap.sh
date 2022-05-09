@@ -177,6 +177,9 @@ else
 	fi
 fi
 
+#Getting project number
+GCP_PROJECT_NUMBER="$(gcloud projects list --format='value(project_number)' --filter=\"$GCP_PROJECT_ID\")"
+
 # try to find cloud foundation panel groups in IAM permissions
 IAM_MANAGER_GROUP=$(gcloud --quiet projects get-iam-policy $GCP_PROJECT_ID --format json | jq -r '.bindings[] | select(.role == "organizations/1049006825317/roles/CF_Project_Manager") | .members[] | select ( . | test("^group:.*-manager@(metrosystems\\.net|cloudfoundation\\.metro\\.digital)$"))')
 if [ "${IAM_MANAGER_GROUP:-notset}" = "notset" ]
@@ -282,6 +285,14 @@ else
 	gcloud --quiet iam service-accounts keys create "${OUTPUT_DIR}/account.json" \
 		--iam-account ${SA_FULL_NAME} --project $GCP_PROJECT_ID
 fi
+
+#Creating a service networking account and granting to it needed role to bypass the service networking api issue
+gcloud beta --quiet services identity create \
+	--service=servicenetworking.googleapis.com \ 
+	--project $GCP_PROJECT_ID
+gcloud --quiet projects add-iam-policy-binding $GCP_PROJECT_ID \
+		--member="serviceAccount:service-${GCP_PROJECT_NUMBER}@service-networking.iam.gserviceaccount.com" \
+		--role="roles/servicenetworking.serviceAgent" >/dev/null
 
 # switch gcloud to service account
 echo "Using ${SA_FULL_NAME} for further bootstrapping"
