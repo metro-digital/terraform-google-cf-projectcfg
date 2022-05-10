@@ -288,7 +288,7 @@ fi
 
 #Creating a service networking account and granting to it needed role to bypass the service networking api issue
 gcloud beta --quiet services identity create \
-	--service=servicenetworking.googleapis.com \ 
+	--service=servicenetworking.googleapis.com \
 	--project $GCP_PROJECT_ID
 gcloud --quiet projects add-iam-policy-binding $GCP_PROJECT_ID \
 		--member="serviceAccount:service-${GCP_PROJECT_NUMBER}@service-networking.iam.gserviceaccount.com" \
