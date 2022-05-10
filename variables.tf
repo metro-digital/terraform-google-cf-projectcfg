@@ -193,8 +193,8 @@ variable "service_accounts" {
     `roles/iam.workloadIdentityUser` binding when environment is created or updated. Thus, you might want to automatically
     import those permissions.
 
-    **`github_action_repositories` (optional):** You can list GitHub repositories (format: user/repo) here. 
-    A Workload Identity Pool and a Workload Identity Pool provider needed for Workload Identity Federation will be created automatically. 
+    **`github_action_repositories` (optional):** You can list GitHub repositories (format: user/repo) here.
+    A Workload Identity Pool and a Workload Identity Pool provider needed for Workload Identity Federation will be created automatically.
     Each repository given gains permissions to authenticate as this service account using Workload Identity Federation.
     This allows any GitHub Action pipeline to use this service account without the need for service account keys.
     An example can be found within the [FAQ].
