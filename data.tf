@@ -58,7 +58,8 @@ locals {
       "^roles/cloudbuild.builds.builder$",
       "^roles/securitycenter.notificationServiceAgent$",
       "^roles/monitoring.notificationServiceAgent$",
-      "^roles/firebaserules.system$"
+      "^roles/firebaserules.system$",
+      "^roles/container.nodeServiceAgent$"
     ]
   ))
 
