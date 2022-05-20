@@ -1,4 +1,5 @@
 # Cloud Foundation project setup module
+
 [FAQ] | [CONTRIBUTING]
 
 This module allows you to configure a Google Cloud Platform project.
@@ -27,22 +28,30 @@ This module requires [terraform] version >1.0
 
 ### VPC Network
 
-A VPC network will be created in the requested regions. [Private Google Access] will be enabled, so you
-can connect to Google Services without public IPs. [Private services access] is also configured allowing you
-to run services like Cloud SQL with private IPs. It's also possible to configure [Cloud NAT] and [Serverless VPC Access] per region.
+A VPC network will be created in the requested regions. [Private Google
+Access] will be enabled, so you can connect to Google Services without
+public IPs. [Private services access] is also configured allowing you to run
+services like Cloud SQL with private IPs. It's also possible to configure
+[Cloud NAT] and [Serverless VPC Access] per region.
 
-For more details please check [docs/DEFAULT-VPC.md](docs/DEFAULT-VPC.md)
+For more details please check [docs/DEFAULT-VPC.md](docs/DEFAULT-VPC.md),
+especially if you plan to extend it by adding custom subnetworks or similar.
+Also all used IP address ranges are documented there.
 
 ### IAM
 
-This module acts "mostly" authoritative on IAM roles. It aims to configure all IAM and Service Account related resources in a central
-place for easy review and adjustments. All active roles are fetched initially and compared with the roles given via roles input. If a
-role shouldn't be set the module will create an empty resource for this role, means terraform will remove it. This will result in a
-module deletion on the next terraform run.
+This module acts "mostly" authoritative on IAM roles. It aims to configure
+all IAM and Service Account related resources in a central place for easy
+review and adjustments. All active roles are fetched initially and compared
+with the roles given via roles input. If a role shouldn't be set the module
+will create an empty resource for this role, means terraform will remove it.
+This will result in a module deletion on the next terraform run.
 
-All roles [listed for service agents][service agent roles] (like for example `roles/dataproc.serviceAgent`) are ignored, so if a service
-get's enabled the default permissions granted automatically by Google Cloud Platform to the related service accounts will stay in place.
-Those excludes are configured in [data.tf](data.tf) - look for a local variable called `role_excludes`
+All roles [listed for service agents][service agent roles] (like for example
+`roles/dataproc.serviceAgent`) are ignored, so if a service gets enabled the
+default permissions granted automatically by Google Cloud Platform to the
+related service accounts will stay in place. This excludes are configured
+in [data.tf](data.tf) - look for a local variable called `role_excludes`
 
 ## Usage
 
@@ -64,7 +73,9 @@ module "project-cfg" {
 }
 ```
 
-Please also take a deeper look into the [FAQ] - there are additional examples available.
+Please also take a deeper look into the [FAQ] - there are additional
+examples available. Examples how to use Workload Identity Federation with
+GitHub and similar things are explained giving simple examples.
 
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Inputs
@@ -81,7 +92,7 @@ Please also take a deeper look into the [FAQ] - there are additional examples av
 | non_authoritative_roles | List of roles (regex) to exclude from authoritative project IAM handling.<br>Roles listed here can have bindings outside of this module.<br><br>Example:<pre>non_authoritative_roles = [<br>  "roles/container.hostServiceAgentUser"<br>]</pre> | `list(string)` | `[]` | no |
 | service_accounts | Service accounts to create for this project.<br><br>**`display_name`:** Human-readable name shown in Google Cloud Console<br><br>**`description` (optional):** Human-readable description shown in Google Cloud Console<br><br>**`iam` (optional):** IAM permissions assigned to this Service Account as a *resource*. This means who else can do something<br>on this Service Account. An example: if you grant `roles/iam.serviceAccountKeyAdmin` to a group here, this group<br>will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to use BigQuery<br>you need to use the project-wide `roles` input to do so.<br><br>**`iam_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative policy with<br>its current value as defined in the Google Cloud Platform. Example use case: Composer 2 adds values to<br>`roles/iam.workloadIdentityUser` binding when environment is created or updated. Thus, you might want to automatically<br>import those permissions.<br><br>**`github_action_repositories` (optional):** You can list GitHub repositories (format: user/repo) here.<br>A Workload Identity Pool and a Workload Identity Pool provider needed for Workload Identity Federation will be created automatically.<br>Each repository given gains permissions to authenticate as this service account using Workload Identity Federation.<br>This allows any GitHub Action pipeline to use this service account without the need for service account keys.<br>An example can be found within the [FAQ].<br>For more details, see the documentation for Google's GitHub action<br>[`google-github-actions/auth`](https://github.com/google-github-actions/auth).<br><br>**Remark:** If you configure `github_action_repositories`, the module binds a member for each repository to the role<br>`roles/iam.workloadIdentityUser` inside the service account's IAM policy. This is done *regardless of whether<br>or not* you list this role in the `iam_non_authoritative_roles` key.<br><br>**Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principle that is<br>executing the terraform code (most likely your service account used in your pipeline) if you plan to use<br>`github_action_repositories`.<br><br>Example:<pre>service_accounts = {<br>    deployments = {<br>      display_name = "Deployments"<br>      description  = "Service Account to deploy application"<br>      description  = "<br>      iam          = {<br>        "roles/iam.serviceAccountKeyAdmin" = [<br>          "group:customer.project-role@cloudfoundation.metro.digital",<br>        ]<br>      }<br>      github_action_repositories = [<br>        "my-user-or-organisation/my-great-repo"<br>      ]<br>    }<br>    bq-reader = {<br>      display_name = "BigQuery Reader"<br>      description  = "Service Account for BigQuery Reader for App XYZ"<br>      iam          = {} # No special Service Account resource IAM permissions<br>    }<br>    composer = {<br>      display_name                = "Composer"<br>      description                 = "Service Account to run Composer 2"<br>      iam                         = {} # No special Service Account resource IAM permissions<br>      iam_non_authoritative_roles = [<br>        # maintained by Composer service - imports any existing value<br>        "roles/iam.workloadIdentityUser"<br>      ]<br>    }<br>  }<br>}</pre> | <pre>map(object({<br>    display_name                = string<br>    description                 = optional(string)<br>    iam                         = map(list(string))<br>    iam_non_authoritative_roles = optional(list(string))<br>    github_action_repositories  = optional(list(string))<br>  }))</pre> | `{}` | no |
 | skip_default_vpc_creation | When set to true the module will not create the default VPC or any<br>related resource like NAT Gateway or serverless VPC access configuration. | `bool` | `false` | no |
-| vpc_regions | Enabled regions and configuration<br><br>Example:<pre>vpc_regions = {<br>  europe-west1 = {<br>    vpcaccess            = true    # Enable serverless VPC access for this region<br>    nat                  = 2       # Create a Cloud NAT with 2 (static) external IP addresses (IPv4) in this region<br>    nat_min_ports_per_vm = 64      # Minimum number of ports allocated to a VM from the NAT defined above (Note: this option is optional, but must be defined for all the regions if it is set for at least one)<br>  },<br>  europe-west3 = {<br>    vpcaccess            = false   # Disable serverless VPC access for this region<br>    nat                  = 0       # No Cloud NAT for this region<br>    nat_min_ports_per_vm = 0       # Since the `nat_min_ports_per_vm` was set for the region above, its definition is required here.<br>  },<br>}</pre> | <pre>map(object({<br>    vpcaccess            = bool<br>    nat                  = number<br>    nat_min_ports_per_vm = optional(number)<br>  }))</pre> | <pre>{<br>  "europe-west1": {<br>    "nat": 0,<br>    "vpcaccess": false<br>  }<br>}</pre> | no |
+| vpc_regions | Enabled regions and configuration<br><br>Example:<pre>vpc_regions = {<br>  europe-west1 = {  # Create a subnetwork in europe-west1<br>    vpcaccess            = true    # Enable serverless VPC access for this region<br>    nat                  = 2       # Create a Cloud NAT with 2 (static) external IP addresses (IPv4) in this region<br>    nat_min_ports_per_vm = 64      # Minimum number of ports allocated to a VM from the NAT defined above (Note: this option is optional, but must be defined for all the regions if it is set for at least one)<br>    gke_secondary_ranges = true    # Create secondary IP ranges used by GKE with VPC-native clusters (gke-services & gke-pods)<br>    proxy_only           = true    # Create an additional "proxy-only" network in this region used by L7 load balancers<br>  },<br>  europe-west4 = {  # Create a subnetwork in europe-west4<br>    vpcaccess            = false   # Disable serverless VPC access for this region<br>    nat                  = 0       # No Cloud NAT for this region<br>    nat_min_ports_per_vm = 0       # Since the `nat_min_ports_per_vm` was set for the region above, its definition is required here.<br>    gke_secondary_ranges = false   # Since the `gke_secondary_ranges` was set for the region above, its definition is required here.<br>    proxy_only           = false   # Since the `proxy_only` was set for the region above, its definition is required here.<br>  },<br>}</pre>By default the module will create a subnetwork in europe-west1 but do not launch any additional features like<br>NAT or VPC access. Secondary ranges for GKE are disabled, too. | <pre>map(object({<br>    vpcaccess            = bool<br>    nat                  = number<br>    nat_min_ports_per_vm = optional(number)<br>    gke_secondary_ranges = optional(bool)<br>    proxy_only           = optional(bool)<br>  }))</pre> | <pre>{<br>  "europe-west1": {<br>    "nat": 0,<br>    "vpcaccess": false<br>  }<br>}</pre> | no |
 
 ## Outputs
 
@@ -104,11 +115,15 @@ This module needs some command line utils to be installed:
 
 This project is licensed under the terms of the [Apache License 2.0](LICENSE)
 
-This [terraform] module depends on providers from HashiCorp, Inc. which are licensed under MPL-2.0. You can obtain the respective source code for these provider here:
-  * [`hashicorp/google`](https://github.com/hashicorp/terraform-provider-google)
-  * [`hashicorp/external`](https://github.com/hashicorp/terraform-provider-external)
+This [terraform] module depends on providers from HashiCorp, Inc. which are
+licensed under MPL-2.0. You can obtain the respective source code for these
+provider here:
 
-This [terraform] module uses pre-commit hooks which are licensed under MPL-2.0. You can obtain the respective source code here:
+- [`hashicorp/google`](https://github.com/hashicorp/terraform-provider-google)
+- [`hashicorp/external`](https://github.com/hashicorp/terraform-provider-external)
+
+This [terraform] module uses pre-commit hooks which are licensed under MPL-2.0.
+You can obtain the respective source code here:
 
 - [`terraform-linters/tflint`](https://github.com/terraform-linters/tflint)
 - [`terraform-linters/tflint-ruleset-google`](https://github.com/terraform-linters/tflint-ruleset-google)

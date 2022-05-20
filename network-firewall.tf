@@ -25,7 +25,7 @@ resource "google_compute_firewall" "allow-all-internal" {
     protocol = "all"
   }
 
-  source_ranges = local.default_vpc_active_subnets
+  source_ranges = local.default_vpc_active_ranges
 }
 
 resource "google_compute_firewall" "allow-icmp-metro-public" {

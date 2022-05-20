@@ -78,24 +78,33 @@ variable "vpc_regions" {
     Example:
     ```
     vpc_regions = {
-      europe-west1 = {
+      europe-west1 = {  # Create a subnetwork in europe-west1
         vpcaccess            = true    # Enable serverless VPC access for this region
         nat                  = 2       # Create a Cloud NAT with 2 (static) external IP addresses (IPv4) in this region
         nat_min_ports_per_vm = 64      # Minimum number of ports allocated to a VM from the NAT defined above (Note: this option is optional, but must be defined for all the regions if it is set for at least one)
+        gke_secondary_ranges = true    # Create secondary IP ranges used by GKE with VPC-native clusters (gke-services & gke-pods)
+        proxy_only           = true    # Create an additional "proxy-only" network in this region used by L7 load balancers
       },
-      europe-west3 = {
+      europe-west4 = {  # Create a subnetwork in europe-west4
         vpcaccess            = false   # Disable serverless VPC access for this region
         nat                  = 0       # No Cloud NAT for this region
         nat_min_ports_per_vm = 0       # Since the `nat_min_ports_per_vm` was set for the region above, its definition is required here.
+        gke_secondary_ranges = false   # Since the `gke_secondary_ranges` was set for the region above, its definition is required here.
+        proxy_only           = false   # Since the `proxy_only` was set for the region above, its definition is required here.
       },
     }
     ```
+
+    By default the module will create a subnetwork in europe-west1 but do not launch any additional features like
+    NAT or VPC access. Secondary ranges for GKE are disabled, too.
   EOD
 
   type = map(object({
     vpcaccess            = bool
     nat                  = number
     nat_min_ports_per_vm = optional(number)
+    gke_secondary_ranges = optional(bool)
+    proxy_only           = optional(bool)
   }))
 
   default = {
@@ -103,6 +112,20 @@ variable "vpc_regions" {
       vpcaccess = false
       nat       = 0
     }
+  }
+
+  validation {
+    condition = length(setsubtract(keys(var.vpc_regions), [
+      "europe-west1",
+      "europe-west3",
+      "europe-west4",
+      "europe-west8",
+      "europe-west9",
+      "europe-north1",
+      "europe-central2",
+      "europe-southwest1"
+    ])) == 0
+    error_message = "Invalid region given, must be any of: europe-west1, europe-west3, europe-west4, europe-west8, europe-west9, europe-north1, europe-central2 or europe-southwest1."
   }
 }
 
