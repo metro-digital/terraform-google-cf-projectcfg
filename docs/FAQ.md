@@ -53,20 +53,25 @@ module "project-cfg" {
 }
 ```
 
-Please note the empty `iam` parameter inside the Service Account definition. This is used for IAM rules applied to the
-Service Account as resource. See [How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation)
+Please note the empty `iam` parameter inside the Service Account definition.
+This is used for IAM rules applied to the Service Account as resource. See
+[How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation)
 or [Can I use GKE Workload Identify with this module?](#can-i-use-gke-workload-identify-with-this-module) how to use this.
 
 ### How can I allow Service Account impersonation?
+
 You can grant some other member permissions to impersonate a specific service account by granting the role `roles/iam.serviceAccountTokenCreator`.
 
 This role can be granted on
-  * project level IAM policy
-  * resource level IAM policy
 
-Resource level IAM policy means the IAM policy assigned to a specific service account threading the service account as a resource.
-**It's recommended to grant the role on resource level** to ensure the given member can only impersonate specific service accounts.
-Granting it on project level will allow the member to impersonate all service accounts within the project!
+- project level IAM policy
+- resource level IAM policy
+
+Resource level IAM policy means the IAM policy assigned to a specific
+service account threading the service account as a resource. **It's
+recommended to grant the role on resource level** to ensure the given member
+can only impersonate specific service accounts. Granting it on project level
+will allow the member to impersonate all service accounts within the project!
 
 ```hcl
 module "project-cfg" {
@@ -95,8 +100,9 @@ module "project-cfg" {
 
 ### Can I use GKE Workload Identify with this module?
 
-Yes you can! Just create the Service Account(s) with correct IAM permissions and map them to your Kubernetes
-Service Account. If you configure this Service Account for a pod, the pod will run with permissions of that GCP
+Yes you can! Just create the Service Account(s) with correct IAM permissions
+and map them to your Kubernetes Service Account. If you configure this
+Service Account for a pod, the pod will run with permissions of that GCP
 Service Account.
 
 Example:
@@ -142,9 +148,15 @@ See our [bootstrap](../bootstrap/README.md)
 
 For some reason there's already a network called default in your project.
 
-Option A: Delete the network: terraform state import
+*Option A:* Delete the network using the UI or via `gcloud` CLI
 
-Option B: Import the network into your terraform state (may also result in a delete at next terraform run depending on the networks configuration)
+*Option B:* Import the network into your terraform state (may also result
+into a deletion at next terraform run depending on the networks configuration)
+
+See also:
+
+- [terraform network import]
+- [terraform subnetwork import]
 
 ## GitHub
 
@@ -207,3 +219,6 @@ jobs:
           service_account: 'terraform-iac-pipeline@metro-cf-example-ex1-e8v.iam.gserviceaccount.com'
       # ...
 ```
+
+[terraform network import]: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network#import
+[terraform subnetwork import]: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork#import
