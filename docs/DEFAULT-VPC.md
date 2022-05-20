@@ -7,10 +7,10 @@
 - [General](#general)
 - [Supported regions](#supported-regions)
 - [IP configurations](#ip-configurations)
-  - [RFC1918 free to use IP address ranges in the default VPC](#rfc1918-free-to-use-ip-address-ranges-in-the-default-vpc)
-    - [10.0.0.0 - 10.255.255.255  (10/8 prefix)](#10000---10255255255--108-prefix)
-    - [172.16.0.0 - 172.31.255.255  (172.16/12 prefix)](#1721600---17231255255--1721612-prefix)
-    - [192.168.0.0 - 192.168.255.255 (192.168/16 prefix)](#19216800---192168255255-19216816-prefix)
+  - [Free to use IP address ranges in the default VPC](#free-to-use-ip-address-ranges-in-the-default-vpc)
+    - [10.0.0.0/8 (10.0.0.0 - 10.255.255.255)](#100008-10000---10255255255)
+    - [172.16.0.0/12 (172.16.0.0 - 172.31.255.255)](#172160012-1721600---17231255255)
+    - [192.168.0.0/16 (192.168.0.0 - 192.168.255.255)](#1921680016-19216800---192168255255)
   - [Primary ranges](#primary-ranges)
   - [Secondary ranges](#secondary-ranges)
     - [GKE](#gke)
@@ -33,12 +33,14 @@
 ## General
 
 The creation of a default VPC network is enabled by default and can be disabled
-via `skip_default_vpc_creation` input parameter. One of the main differences
-to the default VPC created by Google is the network range used. This module uses
-RFC 1918\] ip ranges from `172.16.0.0/12` for primary ranges while Google uses
-ranges from `10.0.0.0/8` as this prefix is used widely used within Metros
-internal network. This should help users to easily separate VPCs with on-premise
-connectivity from those without.
+via `skip_default_vpc_creation` input parameter.
+
+One of the main differences  to the default VPC created by Google is the
+network range used. Google uses ranges from `10.0.0.0/8` for the default VPC,
+as this prefix is used widely used within METROs internal network this module
+uses [RFC 1918] ip ranges from `172.16.0.0/12` for primary ranges. This should
+help users to easily separate VPCs with on-premise connectivity from those
+without. Secondary ranges are picked from the `10.0.0.0/8` range.
 
 ## Supported regions
 
@@ -57,28 +59,28 @@ The module aims to support all main regions within the European Union:
 
 ## IP configurations
 
-### RFC1918 free to use IP address ranges in the default VPC
+### Free to use IP address ranges in the default VPC
 
-#### 10.0.0.0 - 10.255.255.255  (10/8 prefix)
+When you want to create additional subnetworks or other network resources
+in the default VPC please take ranges from the ones listed here to avoid any
+further feature implemented inside the module conflicting with your resources.
 
-We will not use `10.192.0.0/10` for any further implementation. If you plan
-to add additional network features to the default VPC use any IP address
-range from here.
+#### 10.0.0.0/8 (10.0.0.0 - 10.255.255.255)
 
-#### 172.16.0.0 - 172.31.255.255  (172.16/12 prefix)
+We will not use `10.192.0.0/10` for any further implementation.
 
-We will not use `172.28.0.0/14` for any further implementation. If you plan
-to add additional network features to the default VPC use any IP address
-range from here.
+#### 172.16.0.0/12 (172.16.0.0 - 172.31.255.255)
 
-#### 192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
+We will not use `172.28.0.0/14` for any further implementation.
 
-Reserved for further use, please do not use.
+#### 192.168.0.0/16 (192.168.0.0 - 192.168.255.255)
+
+Please do not use `192.168.0.0/16`, consider it reserved for further use.
 
 ### Primary ranges
 
-For primary ranges we use allocated `172.16.0.0/15`. Any region will use one
-a `/20` subrange from this block, allowing up to 32 regions
+For primary ranges we allocated `172.16.0.0/15`. Any region will use one
+a `/20` subrange from this block, allowing up to 32 regions.
 
 | Region            | IP range        |
 | ----------------- |-----------------|
@@ -156,16 +158,16 @@ the `172.18.0.0/23` block, allowing up to 32 regions.
 `172.18.64.0/18` allowing 32 regions following Googles
 recommendation to use networks with a `/23` each.
 
-| Region            | IP range         |
-| ----------------- | ---------------- |
-| europe-west1      | "172.18.64.0/23" |
-| europe-west9      | "172.18.66.0/23" |
-| europe-west3      | "172.18.68.0/23" |
-| europe-west4      | "172.18.70.0/23" |
-| europe-north1     | "172.18.72.0/23" |
-| europe-central2   | "172.18.74.0/23" |
-| europe-southwest1 | "172.18.76.0/23" |
-| europe-west8      | "172.18.78.0/23" |
+| Region            | IP range       |
+| ----------------- | -------------- |
+| europe-west1      | 172.18.64.0/23 |
+| europe-west9      | 172.18.66.0/23 |
+| europe-west3      | 172.18.68.0/23 |
+| europe-west4      | 172.18.70.0/23 |
+| europe-north1     | 172.18.72.0/23 |
+| europe-central2   | 172.18.74.0/23 |
+| europe-southwest1 | 172.18.76.0/23 |
+| europe-west8      | 172.18.78.0/23 |
 
 ### Additional used IP ranges
 
@@ -231,4 +233,5 @@ Identity-Aware Proxy
 
 **Applies to:** Every instance inside VPC with network tag `fw-allow-all-iap`
 
+[RFC 1918]: https://datatracker.ietf.org/doc/html/rfc1918
 [proxy only subnets]: https://cloud.google.com/load-balancing/docs/proxy-only-subnets
