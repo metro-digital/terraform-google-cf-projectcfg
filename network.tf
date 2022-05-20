@@ -177,7 +177,7 @@ resource "google_vpc_access_connector" "default" {
       cidr = local.default_vpc_subnet_connectors[r]
   } if var.vpc_regions[r].vpcaccess }
 
-  name          = "vpcaccess-${each.key}"
+  name          = each.key
   region        = each.key
   ip_cidr_range = each.value.cidr
   project       = data.google_project.project.project_id
