@@ -104,7 +104,7 @@ the 10.0.0.0/8 range are used.
 
 ##### Services ranges
 
-Each search range is `/20` in size, resulting in 4096 possible services per
+Each services range is `/20` in size, resulting in 4096 possible services per
 GKE cluster. Reserved range for services is `10.0.0.0/15`, allowing up to 32
 regions.
 
@@ -121,20 +121,20 @@ regions.
 
 ##### Pod ranges
 
-Each search range is `/16` in size, resulting in 256 nodes with 28160 pods
+Each pod range is `/16` in size, resulting in 256 nodes with 28160 pods
 (110 pods per node) per GKE cluster. Reserved range for services is
 `10.32.0.0/11`, allowing up to 32 regions.
 
 | Region            | IP range     |
 | ----------------- | ------------ |
 | europe-west1      | 10.32.0.0/16 |
-| europe-west3      | 10.34.0.0/20 |
-| europe-west4      | 10.35.0.0/20 |
-| europe-west8      | 10.39.0.0/20 |
-| europe-west9      | 10.33.0.0/20 |
-| europe-north1     | 10.36.0.0/20 |
-| europe-central2   | 10.37.0.0/20 |
-| europe-southwest1 | 10.38.0.0/20 |
+| europe-west3      | 10.34.0.0/16 |
+| europe-west4      | 10.35.0.0/16 |
+| europe-west8      | 10.39.0.0/16 |
+| europe-west9      | 10.33.0.0/16 |
+| europe-north1     | 10.36.0.0/16 |
+| europe-central2   | 10.37.0.0/16 |
+| europe-southwest1 | 10.38.0.0/16 |
 
 ### Serverless VPC access
 
@@ -155,8 +155,8 @@ the `172.18.0.0/23` block, allowing up to 32 regions.
 ### Proxy only subnetworks
 
 [Proxy only subnets] are used for Envoy-based load balancers. We use
-`172.18.64.0/18` allowing 32 regions following Googles
-recommendation to use networks with a `/23` each.
+`172.18.64.0/18` allowing 32 regions following Googles recommendation
+to use networks with a `/23` each.
 
 | Region            | IP range       |
 | ----------------- | -------------- |
