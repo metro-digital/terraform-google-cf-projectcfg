@@ -16,5 +16,7 @@ terraform {
   backend "gcs" {
     bucket = "${GCS_BUCKET}"
     prefix = "project-cfg"
+    # can't use local here
+    impersonate_service_account = "${SA_FULL_NAME}"
   }
 }

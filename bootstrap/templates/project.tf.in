@@ -14,52 +14,62 @@
 
 module "project-cfg" {
   source     = "metro-digital/cf-projectcfg/google"
-  project_id = "${GCP_PROJECT_ID}"
+  project_id = local.project_id
+  version    = ">2.0"
 
   roles = {
     "roles/viewer" = [
-      "${IAM_MANAGER_GROUP}",
-      "${IAM_DEVELOPER_GROUP}"
+      local.iam_manager_group,
+      local.iam_developer_group
     ],
     "roles/cloudsupport.techSupportEditor" = [
-      "${IAM_MANAGER_GROUP}"
+      local.iam_manager_group,
     ]
     "roles/compute.networkAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/vpcaccess.admin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/compute.securityAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/storage.admin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/storage.objectAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/iam.serviceAccountKeyAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/iam.serviceAccountAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/iam.securityAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/iam.roleAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
     "roles/serviceusage.serviceUsageAdmin" = [
-      "serviceAccount:${SA_FULL_NAME}"
+      local.iam_iac_service_account
     ]
+    ${GITHUB_REPOSITORY_IAM_BLOCK_STRING}
   }
 
   service_accounts = {
     "${SA_SHORT_NAME}" = {
       display_name = "Service account used in IaC pipelines"
-      iam          = {} # No special Service Account resource IAM permissions
+      iam          = {
+        "roles/iam.serviceAccountTokenCreator" = [
+          # Allow manager group to impersonate IaC service account
+          local.iam_manager_group,
+          # Allow service account to impersonate itself, useful for pipelines
+          local.iam_iac_service_account
+        ]
+      }
+      ${GITHUB_REPOSITORY_SA_BLOCK_STRING}
     }
   }
 
