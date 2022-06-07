@@ -21,3 +21,5 @@
 ehthumbs.db
 Thumbs.db
 .terraform.lock.hcl
+
+bootstrap/iac-output

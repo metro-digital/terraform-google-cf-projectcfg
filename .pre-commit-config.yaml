@@ -14,7 +14,7 @@
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: db7346d375eda68a0174f2c057dd97f2fbffe030  # frozen: v4.2.0
+  rev: 3298ddab3c13dd77d6ce1fc0baf97691430d84b0  # frozen: v4.3.0
   hooks:
     - id: detect-private-key
     - id: end-of-file-fixer
@@ -22,14 +22,23 @@ repos:
     - id: mixed-line-ending
       args: ['--fix', 'lf']
 - repo: https://github.com/antonbabenko/pre-commit-terraform
-  rev: 74a2e54f236a84754449045e0cf5e12f66c68c4d  # frozen: v1.71.0
+  rev: 57467c56d491420aa6c89f722b120ac7bea0289b  # frozen: v1.73.0
   hooks:
     - id: terraform_fmt
+      exclude: ^/.+/$
     - id: terraform_tflint
+      exclude: ^/.+/$
     - id: terraform_tfsec
+      exclude: ^/.+/$
       args:
         - --args=--config-file=__GIT_WORKING_DIR__/.tfsec/config.yml
     - id: terraform_docs
+- repo: https://github.com/jumanjihouse/pre-commit-hooks
+  rev: 9daf4ccb1f73e83c75517076bc2c1aafde20a082  # frozen: 2.1.6
+  hooks:
+    - id: script-must-have-extension
+    - id: shellcheck
+    - id: shfmt
 - repo: https://github.com/thlorenz/doctoc
   rev: 70fdcd39ef919754011a827bd25f23a0b141c3c3  # frozen: v2.2.0
   hooks:

@@ -23,7 +23,7 @@ function check_program() {
   set +e # next command my fail - allow failure
   PRG="$(command -v "$1" 2>/dev/null)"
   set -e # exit script on any error again
-  if [ -z "$PRG" ] ; then
+  if [ -z "$PRG" ]; then
     echo "ERROR - \"$1\" not found" >&2
     exit 1
   fi
@@ -34,10 +34,10 @@ function get_dns_netblocks() {
   # store output in variable to loop over - piping directly into loop
   # would create a subshell as a result and arrays IPV4 and IPV6 are out of scope
   RECORDS=$(dig +short txt "$1" | xargs)
-  for RECORD in $RECORDS ; do
+  for RECORD in $RECORDS; do
     case "$RECORD" in
-      ip4:*)  IPV4+=("${RECORD#*:}") ;;
-      ip6:*)  IPV6+=("${RECORD#*:}") ;;
+      ip4:*) IPV4+=("${RECORD#*:}") ;;
+      ip6:*) IPV6+=("${RECORD#*:}") ;;
       include:*) get_dns_netblocks "${RECORD#*:}" ;;
     esac
   done

@@ -13,6 +13,8 @@
   - [Error creating Network: googleapi: Error 409: The resource 'projects/<projectid>/global/networks/default' already exists](#error-creating-network-googleapi-error-409-the-resource-projectsprojectidglobalnetworksdefault-already-exists)
 - [GitHub](#github)
   - [How to use Workload Identity Federation with GitHub Actions](#how-to-use-workload-identity-federation-with-github-actions)
+  - [Error creating WorkloadIdentityPool - Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource](#error-creating-workloadidentitypool---error-403-permission-iamworkloadidentitypoolscreate-denied-on-resource)
+  - [Error creating WorkloadIdentityPool - Error 409: Requested entity already exists](#error-creating-workloadidentitypool---error-409-requested-entity-already-exists)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -179,19 +181,25 @@ module "project-cfg" {
     terraform-iac-pipeline = {
       display_name = "Service account used in IaC pipelines"
       iam = {}
+      github_action_repositories = [
+        "metro-digital-inner-source/<your repository>"
+      ]
     }
-    github_action_repositories = [
-      "metro-digital-inner-source/<your repository>"
-    ]
     # ...
   }
   # ...
 }
 ```
 
-Setting the `github_action_repositories` parameter will create a default A Workload Identity Pool named "github-actions" and a Workload Identity Pool provider, named "GitHub". This is reflected in the code snipped below under `workload_identity_provider`<br>
-You need to set the `permissions` block to grant your id-token the intended permissions.
-After that, you can use this [GitHub action](https://github.com/google-github-actions/auth) to authenticate inside your flow:
+**Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principle that is
+executing the terraform code (most likely your service account used in your pipeline) if you plan to use
+`github_action_repositories`.
+
+Setting the `github_action_repositories` parameter will create a default Workload Identity Pool named
+"github-actions" and a Workload Identity Pool provider, named "GitHub". This is reflected in the code snippet
+below under `workload_identity_provider`. You need to set the `permissions` block to grant your id-token the
+intended permissions. After that, you can use this [GitHub action](https://github.com/google-github-actions/auth)
+to authenticate inside your flow:
 
 ```yaml
 jobs:
@@ -220,5 +228,34 @@ jobs:
       # ...
 ```
 
+### Error creating WorkloadIdentityPool - Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource
+
+If you are facing an errror similar to this:
+```
+Error creating WorkloadIdentityPool: googleapi: Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource '//iam.googleapis.com/projects/<GCP PROJECT>/locations/global' (or it may not exist).
+```
+
+You may need to grant `roles/iam.workloadIdentityPoolAdmin` to your service account. This is also the case if you
+grant the role via this module, even if the pool itself has some dependency on the IAM permission, it may not wait long enough.
+Please be aware Google Cloud Platform may needs a few minutes to pick up this IAM change, if you still see the error after granting the role, please wait a few minutes and try again. If the error persists, feel free to reach out to the Cloud Foundation team if needed.
+
+### Error creating WorkloadIdentityPool - Error 409: Requested entity already exists
+
+This usually happens if you created the pool via terraform and destroyed it again. To solve the issue you need to:
+
+1. Grant yourself `roles/iam.workloadIdentityPoolAdmin` on the project, and navigate to [workload identity pools].
+1. Enable `Show deleted pools and providers`
+1. Restore the pool with ID `github-actions`
+1. Restore the pool provider with ID `github`
+
+After you restored your pool and provider, you need to import them into your terraform state:
+```shell
+export GCP_PROJECT_ID="<YOUR GOOGLE PROJECT ID>"
+terraform import 'module.project-cfg.google_iam_workload_identity_pool.github-actions[0]' $GCP_PROJECT_ID/github-actions
+terraform import 'module.project-cfg.google_iam_workload_identity_pool_provider.github[0]' $GCP_PROJECT_ID/github-actions/github
+```
+
+
+[workload identity pools]: https://console.cloud.google.com/iam-admin/workload-identity-pools
 [terraform network import]: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network#import
 [terraform subnetwork import]: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_subnetwork#import
