@@ -29,7 +29,7 @@ function log_error() {
 }
 
 function check_program() {
-	PRG=$(which "${1}" 2>/dev/null || true)
+	PRG=$(command -v "${1}" 2>/dev/null || true)
 	if [ -z "${PRG}" ]; then
 		log_error "Program \"$1\" not found"
 		exit 1
