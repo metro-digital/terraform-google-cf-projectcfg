@@ -20,13 +20,13 @@ set -u
 set -e
 
 function check_program() {
-  set +e # next command my fail - allow failure
-  PRG="$(command -v "$1" 2>/dev/null)"
-  set -e # exit script on any error again
-  if [ -z "$PRG" ]; then
-    echo "ERROR - \"$1\" not found" >&2
-    exit 1
-  fi
+	set +e # next command my fail - allow failure
+	PRG="$(command -v "$1" 2>/dev/null)"
+	set -e # exit script on any error again
+	if [ -z "$PRG" ]; then
+		echo "ERROR - \"$1\" not found" >&2
+		exit 1
+	fi
 }
 
 check_program jq
@@ -35,5 +35,5 @@ check_program curl
 eval "$(jq -r '@sh "PROJECT_ID=\(.project_id) ACCESS_TOKEN=\(.access_token)"')"
 
 curl -H "Authorization: Bearer $ACCESS_TOKEN" -s -X POST \
-  "https://cloudresourcemanager.googleapis.com/v3/projects/$PROJECT_ID:getIamPolicy" |
-  jq -c '{roles: [.bindings[].role] | join(",")}'
+	"https://cloudresourcemanager.googleapis.com/v3/projects/$PROJECT_ID:getIamPolicy" |
+	jq -c '{roles: [.bindings[].role] | join(",")}'
