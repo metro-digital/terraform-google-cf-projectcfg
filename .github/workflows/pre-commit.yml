@@ -1,0 +1,58 @@
+---
+# yamllint disable rule:line-length
+name: pre-commit
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Install terraform-docs
+        run: |
+          curl -L "$(curl -s https://api.github.com/repos/terraform-docs/terraform-docs/releases/latest |
+            grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")" > terraform-docs.tgz && \
+            tar -xzf terraform-docs.tgz terraform-docs && rm terraform-docs.tgz && chmod +x terraform-docs && \
+            sudo mv terraform-docs /usr/bin/
+      - name: Install tflint
+        run: |
+          # tflint
+          curl -L "$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest |
+            grep -o -E -m 1 "https://.+?_linux_amd64.zip")" > tflint.zip && \
+            unzip tflint.zip && rm tflint.zip && sudo mv tflint /usr/bin/
+      - name: Install tfsec
+        run: |
+          curl -L "$(curl -s https://api.github.com/repos/aquasecurity/tfsec/releases/latest |
+            grep -o -E -m 1 "https://.+?tfsec-linux-amd64")" > tfsec && \
+            chmod +x tfsec && sudo mv tfsec /usr/bin/
+      - name: Install shfmt
+        run: |
+          curl -L "$(curl -s https://api.github.com/repos/mvdan/sh/releases/latest |
+            grep -o -E -m 1 "https://.+?_linux_amd64")" > shfmt && \
+            chmod +x shfmt && sudo mv shfmt /usr/bin/
+
+      - name: pre-commit
+        uses: pre-commit/action@v2.0.3
+
+      - name: Failure
+        if: ${{ failure() }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'pre-commit failed! Please ensure pre-commit doesnt report any error.'
+            })
