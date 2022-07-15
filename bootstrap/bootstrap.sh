@@ -293,7 +293,22 @@ for role in roles/iam.serviceAccountAdmin roles/serviceusage.serviceUsageAdmin; 
 done
 
 echo "Enabling required APIs..."
-for API in iam.googleapis.com cloudresourcemanager.googleapis.com serviceusage.googleapis.com; do
+# compute is enabled during bootstrap as it creates service account
+# that needs permissions on project level. The "role only" apply
+# may fail if this account doesnt exist, and the targeted apply
+# ignores the dependencies
+#
+# servicenetworking is enabled as it needs a long preperation time,
+# and as this is an async action terraform sometimes fails at initial
+# runs (service not yet ready...)
+REQUIRED_APIS=(
+	"iam.googleapis.com"
+	"cloudresourcemanager.googleapis.com"
+	"serviceusage.googleapis.com"
+	"compute.googleapis.com"
+	"servicenetworking.googleapis.com"
+)
+for API in "${REQUIRED_APIS[@]}"; do
 	echo "  * Enabling ${API}..."
 	COMMAND_OUTPUT=$(gcloud --quiet services enable "${API}" --project "${GCP_PROJECT_ID}" 2>&1)
 done
@@ -301,7 +316,7 @@ done
 SA_FULL_NAME="${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
 
 # pipeline service account
-SERVICE_ACCOUNT_CHECK=$(gcloud iam service-accounts list --project "${GCP_PROJECT_ID}" --filter "email=${SA_FULL_NAME}" --format "value(disabled)")
+SERVICE_ACCOUNT_CHECK=$(gcloud iam service-accounts list --project "${GCP_PROJECT_ID}" --filter "email=${SA_FULL_NAME}" --format "value(disabled)" 2>/dev/null)
 if [ "${SERVICE_ACCOUNT_CHECK:-notset}" = "notset" ]; then # account does not exist
 	echo "Creating service account ${SA_FULL_NAME}..." | fold -s -w 80
 	COMMAND_OUTPUT=$(gcloud iam service-accounts create "${SA_NAME}" \
@@ -462,15 +477,15 @@ else
 	# we send command output to user again, no need to use the trap any longer
 	reset_command_output_trap
 
-	# Build plan
-	echo "Building an initial rollout plan..."
-	(rm -f bootstrap.tfplan && terraform plan -out bootstrap.tfplan >/dev/null 2>&1)
+	# Build roles only plan
+	echo "Building a plan to roll out all IAM changes..."
+	(rm -f bootstrap.tfplan && terraform plan -target module.project-cfg.google_project_iam_binding.roles -out bootstrap.tfplan >/dev/null 2>&1)
 	TF_PLAN=$(terraform show bootstrap.tfplan)
 	cat <<-END_OF_DOC
 
 		The script has done all the initial bootstrapping to execute Terraform for the
-		first time! Depending on your configuration, the module will create several
-		additional resources (e.g. IAM bindings) during the first run:
+		first time! To avoid and problems based on missing permissions, we will roll out
+		the needed IAM permissions only:
 
 		---
 		${TF_PLAN}
@@ -478,16 +493,50 @@ else
 
 		${TEXT_BOLD}${TEXT_COLOR_MAGENTA}Please check the above plan carefully, expecially if you are bootstrapping a
 		project that was already used previously (e.g. it already contains IAM policy
-		bindings). The Terraform code may removes IAM permissions. If you are using a
-		fresh (newly created project) it is most likely safe to accept the
-		changes.${TEXT_ALL_OFF}
+		bindings). The Terraform code may remove IAM permissions.
+
+		If you are using afresh (newly created project) it is most likely safe to accept
+		                the changes.${TEXT_ALL_OFF}
+
+	END_OF_DOC
+	read -p "Execute 'terraform apply' for plan above (y/n)? " -n 1 -r
+	echo
+	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+		echo "Exiting bootstrap without executing 'terraform apply' for the first time. Your project is now bootstrapped but may still miss resources that are defined in the generated Terraform code. Execute 'terraform apply' from within ${OUTPUT_DIR} to roll the missing resources." | fold -s -w 80
+		rm "bootstrap.tfplan"
+	else
+		echo "Applying the Terraform changes..."
+		terraform apply -auto-approve bootstrap.tfplan
+		rm "bootstrap.tfplan"
+	fi
+
+	echo "Building an initial full rollout plan..."
+	(rm -f bootstrap.tfplan && terraform plan -out bootstrap.tfplan >/dev/null 2>&1)
+	TF_PLAN=$(terraform show bootstrap.tfplan)
+	cat <<-END_OF_DOC
+
+		The script has done all needed steps to execute Terraform for the first time
+		managing your complete project resources! Depending on your configuration,
+		the module will create several additional resources (e.g. IAM bindings)
+		during the first run:
+
+		---
+		${TF_PLAN}
+		---
+
+		${TEXT_BOLD}${TEXT_COLOR_MAGENTA}Please check the above plan carefully, expecially if you are bootstrapping a
+		project that was already used previously (e.g. it already contains IAM policy
+		bindings). The Terraform code may removes IAM permissions.
+
+		If you are using afresh (newly created project) it is most likely safe to accept
+		                the changes.${TEXT_ALL_OFF}
 
 	END_OF_DOC
 
 	read -p "Execute 'terraform apply' for plan above (y/n)? " -n 1 -r
 	echo
 	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-		echo "Exiting bootstrap without executing 'terraform apply' for the first time. Your project is now bootstrapped but may still miss resources that are defined in the generated Terraform code. Execute 'terraform apply' from within ${OUTPUT_DIR} to roll the missing resources." | fold -s -w 80
+		echo "Exiting bootstrap without executing 'terraform apply' with full apply. Your project is now bootstrapped but may still miss resources that are defined in the generated Terraform code. Execute 'terraform apply' from within ${OUTPUT_DIR} to roll the missing resources." | fold -s -w 80
 		rm "bootstrap.tfplan"
 	else
 		echo "Applying the Terraform changes..."

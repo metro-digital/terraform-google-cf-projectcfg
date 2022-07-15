@@ -22,39 +22,17 @@ module "project-cfg" {
       local.iam_manager_group,
       local.iam_developer_group
     ],
-    "roles/cloudsupport.techSupportEditor" = [
-      local.iam_manager_group,
-    ]
-    "roles/compute.networkAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/vpcaccess.admin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/compute.securityAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/storage.admin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/storage.objectAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/iam.serviceAccountKeyAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/iam.serviceAccountAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/iam.securityAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/iam.roleAdmin" = [
-      local.iam_iac_service_account
-    ]
-    "roles/serviceusage.serviceUsageAdmin" = [
-      local.iam_iac_service_account
-    ]
+    "roles/cloudsupport.techSupportEditor" = [ local.iam_manager_group ]
+    "roles/compute.networkAdmin"           = [ local.iam_iac_service_account ]
+    "roles/vpcaccess.admin"                = [ local.iam_iac_service_account ]
+    "roles/compute.securityAdmin"          = [ local.iam_iac_service_account ]
+    "roles/storage.admin"                  = [ local.iam_iac_service_account ]
+    "roles/storage.objectAdmin"            = [ local.iam_iac_service_account ]
+    "roles/iam.serviceAccountKeyAdmin"     = [ local.iam_iac_service_account ]
+    "roles/iam.serviceAccountAdmin"        = [ local.iam_iac_service_account ]
+    "roles/iam.securityAdmin"              = [ local.iam_iac_service_account ]
+    "roles/iam.roleAdmin"                  = [ local.iam_iac_service_account ]
+    "roles/serviceusage.serviceUsageAdmin" = [ local.iam_iac_service_account ]
     ${GITHUB_REPOSITORY_IAM_BLOCK_STRING}
   }
 
