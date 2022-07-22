@@ -7,7 +7,7 @@
 - [IAM](#iam)
   - [How to grant project level permissions to a service account](#how-to-grant-project-level-permissions-to-a-service-account)
   - [How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation)
-  - [Can I use GKE Workload Identify with this module?](#can-i-use-gke-workload-identify-with-this-module)
+  - [Can I use GKE Workload Identity with this module?](#can-i-use-gke-workload-identity-with-this-module)
 - [terraform](#terraform)
   - [How to prepare a new generated project for this module?](#how-to-prepare-a-new-generated-project-for-this-module)
   - [Error creating Network: googleapi: Error 409: The resource 'projects/<projectid>/global/networks/default' already exists](#error-creating-network-googleapi-error-409-the-resource-projectsprojectidglobalnetworksdefault-already-exists)
@@ -70,7 +70,7 @@ This role can be granted on
 - resource level IAM policy
 
 Resource level IAM policy means the IAM policy assigned to a specific
-service account threading the service account as a resource. **It's
+service account, considering the service account as a resource. **It's
 recommended to grant the role on resource level** to ensure the given member
 can only impersonate specific service accounts. Granting it on project level
 will allow the member to impersonate all service accounts within the project!
@@ -100,7 +100,7 @@ module "project-cfg" {
 }
 ```
 
-### Can I use GKE Workload Identify with this module?
+### Can I use GKE Workload Identity with this module?
 
 Yes you can! Just create the Service Account(s) with correct IAM permissions
 and map them to your Kubernetes Service Account. If you configure this
@@ -191,7 +191,7 @@ module "project-cfg" {
 }
 ```
 
-**Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principle that is
+**Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principal that is
 executing the terraform code (most likely your service account used in your pipeline) if you plan to use
 `github_action_repositories`.
 
@@ -230,14 +230,14 @@ jobs:
 
 ### Error creating WorkloadIdentityPool - Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource
 
-If you are facing an errror similar to this:
+If you are facing an error similar to this:
 ```
 Error creating WorkloadIdentityPool: googleapi: Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource '//iam.googleapis.com/projects/<GCP PROJECT>/locations/global' (or it may not exist).
 ```
 
 You may need to grant `roles/iam.workloadIdentityPoolAdmin` to your service account. This is also the case if you
-grant the role via this module, even if the pool itself has some dependency on the IAM permission, it may not wait long enough.
-Please be aware Google Cloud Platform may needs a few minutes to pick up this IAM change, if you still see the error after granting the role, please wait a few minutes and try again. If the error persists, feel free to reach out to the Cloud Foundation team if needed.
+grant the role via this module; even if the pool itself has some dependency on the IAM permission, terraform may not wait long enough.
+Please be aware Google Cloud Platform may need a few minutes to pick up this IAM change; if you still see the error after granting the role, please wait a few minutes and try again. If the error persists, feel free to reach out to the Cloud Foundation team if needed.
 
 ### Error creating WorkloadIdentityPool - Error 409: Requested entity already exists
 
