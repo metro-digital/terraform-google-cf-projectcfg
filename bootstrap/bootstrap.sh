@@ -284,7 +284,7 @@ fi
 # ensure we print the error stored in COMMAND_OUTPUT before exiting the script
 set_command_output_trap
 
-echo "Binding required roles to group '${IAM_MANAGER_GROUP}'..." | fold -s -w 80
+echo "Binding roles to manager group '${IAM_MANAGER_GROUP}'..." | fold -s -w 80
 for role in roles/iam.serviceAccountAdmin roles/serviceusage.serviceUsageAdmin; do
 	echo "  * Binding $role..."
 	COMMAND_OUTPUT=$(gcloud --quiet projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
@@ -334,7 +334,7 @@ else # whatever may happen else...
 	exit 1
 fi
 
-echo "Binding required roles to service account '${SA_FULL_NAME}'..." | fold -s -w 80
+echo "Binding roles to service account '${SA_FULL_NAME}'..." | fold -s -w 80
 for ROLE in roles/compute.networkAdmin roles/compute.securityAdmin roles/storage.admin roles/storage.objectAdmin roles/iam.serviceAccountKeyAdmin roles/iam.serviceAccountAdmin roles/iam.securityAdmin roles/iam.roleAdmin roles/serviceusage.serviceUsageAdmin; do
 	echo "  * Binding ${ROLE}..."
 	COMMAND_OUTPUT=$(gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
@@ -368,7 +368,12 @@ while ! gsutil -i "${SA_FULL_NAME}" mb -c nearline -b on -l EU -p "${GCP_PROJECT
 	echo "  * IAM permissions not propagated yet. Waiting another 5 seconds..."
 	sleep 5
 done
-gsutil -i "${SA_FULL_NAME}" rb -f "gs://${IAM_TEST_BUCKET_NAME}" >/dev/null 2>&1
+
+echo "Permissions propagated, cleaning up GCS test resource..."
+while ! gsutil -i "${SA_FULL_NAME}" rb -f "gs://${IAM_TEST_BUCKET_NAME}" >/dev/null 2>&1; do
+	echo "  * Still cleaning up. Waiting another 5 seconds..."
+	sleep 5
+done
 
 if gsutil -i "${SA_FULL_NAME}" -q ls "gs://${GCS_BUCKET}" >/dev/null 2>&1; then
 	echo "${TEXT_COLOR_YELLOW}GCS bucket ${GCS_BUCKET} already exists. Skipping creation.${TEXT_ALL_OFF}" | fold -s -w 80
@@ -496,7 +501,7 @@ else
 		bindings). The Terraform code may remove IAM permissions.
 
 		If you are using afresh (newly created project) it is most likely safe to accept
-		                the changes.${TEXT_ALL_OFF}
+		the changes.${TEXT_ALL_OFF}
 
 	END_OF_DOC
 	read -p "Execute 'terraform apply' for plan above (y/n)? " -n 1 -r
@@ -529,7 +534,7 @@ else
 		bindings). The Terraform code may removes IAM permissions.
 
 		If you are using afresh (newly created project) it is most likely safe to accept
-		                the changes.${TEXT_ALL_OFF}
+		the changes.${TEXT_ALL_OFF}
 
 	END_OF_DOC
 
