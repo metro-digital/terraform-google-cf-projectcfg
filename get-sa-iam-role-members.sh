@@ -34,8 +34,8 @@ check_program curl
 
 eval "$(jq -r '@sh "PROJECT_ID=\(.project_id) SA_UNIQUE_ID=\(.sa_unique_id) ACCESS_TOKEN=\(.access_token) ROLE=\(.role)"')"
 
-IAM_POLICY=$(curl -H "Authorization: Bearer $ACCESS_TOKEN" -s -X POST \
-	"https://iam.googleapis.com/v1/projects/$PROJECT_ID/serviceAccounts/$SA_UNIQUE_ID:getIamPolicy")
+IAM_POLICY=$(curl -H "Authorization: Bearer ${ACCESS_TOKEN}" -s -X POST \
+	"https://iam.googleapis.com/v1/projects/${PROJECT_ID}/serviceAccounts/${SA_UNIQUE_ID}:getIamPolicy" -d "")
 
 # check if policy is empty
 BINDINGS_LENGTH=$(echo "${IAM_POLICY}" | jq -r '.bindings | length')
