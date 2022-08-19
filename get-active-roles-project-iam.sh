@@ -34,6 +34,6 @@ check_program curl
 
 eval "$(jq -r '@sh "PROJECT_ID=\(.project_id) ACCESS_TOKEN=\(.access_token)"')"
 
-curl -H "Authorization: Bearer $ACCESS_TOKEN" -s -X POST \
-	"https://cloudresourcemanager.googleapis.com/v3/projects/$PROJECT_ID:getIamPolicy" |
+curl -H "Authorization: Bearer ${ACCESS_TOKEN}" -s -X POST \
+	"https://cloudresourcemanager.googleapis.com/v3/projects/${PROJECT_ID}:getIamPolicy" |
 	jq -c '{roles: [.bindings[].role] | join(",")}'
