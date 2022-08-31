@@ -364,7 +364,7 @@ reset_command_output_trap
 
 echo "Waiting for GCP to pick up recent IAM changes..."
 IAM_TEST_BUCKET_NAME="cf-bootstrap-$(date | openssl dgst -sha1 -binary | xxd -p)"
-while ! gsutil -i "${SA_FULL_NAME}" mb -c nearline -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${IAM_TEST_BUCKET_NAME}" >/dev/null 2>&1; do
+while ! gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${IAM_TEST_BUCKET_NAME}" >/dev/null 2>&1; do
 	echo "  * IAM permissions not propagated yet. Waiting another 5 seconds..."
 	sleep 5
 done
@@ -379,7 +379,7 @@ if gsutil -i "${SA_FULL_NAME}" -q ls "gs://${GCS_BUCKET}" >/dev/null 2>&1; then
 	echo "${TEXT_COLOR_YELLOW}GCS bucket ${GCS_BUCKET} already exists. Skipping creation.${TEXT_ALL_OFF}" | fold -s -w 80
 else
 	echo "Creating GCS bucket for Terraform state..."
-	gsutil -i "${SA_FULL_NAME}" mb -c nearline -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${GCS_BUCKET}"
+	gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${GCS_BUCKET}"
 fi
 set_command_output_trap
 
