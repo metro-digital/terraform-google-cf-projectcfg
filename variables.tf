@@ -335,3 +335,29 @@ variable "essential_contacts" {
   }))
   default = {}
 }
+
+variable "workload_identity_pool_attribute_mapping" {
+  description = <<-EOD
+    Maps attributes from authentication credentials issued by an external identity provider
+    to Google Cloud attributes
+
+    **Note** Teams must be cautious before modifying the attribute mapping as it may cause
+    undesired permission issues. See [documentation](https://cloud.google.com/iam/docs/configuring-workload-identity-federation#github-actions)
+    Example:
+    ```
+    {
+      "google.subject"             = "assertion.sub"
+      "attribute.actor"            = "assertion.actor"
+      "attribute.aud"              = "assertion.aud"
+      "attribute.repository"       = "assertion.repository"
+      "attribute.repository_owner" = "assertion.repository_owner"
+    }
+    ```
+
+  EOD
+  type        = map(any)
+  default = {
+    "google.subject"       = "assertion.sub"
+    "attribute.repository" = "assertion.repository"
+  }
+}
