@@ -15,7 +15,7 @@
 module "project-cfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = local.project_id
-  version    = ">=2.0"
+  version    = ">=2.0.5"
 
   roles = {
     "roles/viewer" = [
