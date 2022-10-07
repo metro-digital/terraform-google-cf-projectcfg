@@ -170,7 +170,7 @@ if [ "${GCP_PROJECT_ID:-notset}" = "notset" ]; then
 else
 	GCP_PROJECT_NAME="$(gcloud projects list --format='value(name)' --filter="'$GCP_PROJECT_ID'")"
 	if [ "${GCP_PROJECT_NAME}" = "" ]; then
-		log_error "Unable to find a project with the given project ID '${GCP_PROJECT_NAME}'!"
+		log_error "Unable to find a project with the given project ID '${GCP_PROJECT_ID}'!"
 		log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role (or a role with comparable permissions) assigned to this account inside the project?"
 		exit 1
 	fi
@@ -178,6 +178,11 @@ fi
 
 #Getting project number
 GCP_PROJECT_NUMBER="$(gcloud projects list --format='value(project_number)' --filter="'$GCP_PROJECT_ID'")"
+if [ "${GCP_PROJECT_NUMBER}" = "" ]; then
+	log_error "Unable to determine a project number with the given project ID '${GCP_PROJECT_ID}'!"
+	log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role (or a role with comparable permissions) assigned to this account inside the project?"
+	exit 1
+fi
 
 # try to find Cloud Foundation Panel groups in IAM permissions
 IAM_MANAGER_GROUP=$(gcloud --quiet projects get-iam-policy "${GCP_PROJECT_ID}" --format json | jq -r '.bindings[] | select(.role == "organizations/1049006825317/roles/CF_Project_Manager") | .members[] | select ( . | test("^group:.*-manager@(metrosystems\\.net|cloudfoundation\\.metro\\.digital)$"))')
@@ -253,7 +258,10 @@ if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
 		exit 1
 	fi
 	echo
-	gcloud auth application-default login
+	if ! gcloud auth application-default login; then
+		log_error "Error occured during Application Default Credentials setup ... can't proceed"
+		exit 1
+	fi
 	echo
 fi
 
@@ -264,7 +272,10 @@ if [[ "${NO_CODE_GEN:-notset}" != 'true' ]]; then
 		echo
 		if [[ $REPLY =~ ^[Yy]$ ]]; then
 			echo "Creating '${OUTPUT_DIR}'"
-			mkdir -p "${OUTPUT_DIR}"
+			if ! mkdir -p "${OUTPUT_DIR}"; then
+				log_error "Could not create output directory... can't proceed"
+				exit 1
+			fi
 		else
 			log_error "Aborted."
 			exit 1
@@ -334,8 +345,19 @@ else # whatever may happen else...
 	exit 1
 fi
 
+REQUIRED_ROLES=(
+	"roles/compute.networkAdmin"
+	"roles/compute.securityAdmin"
+	"roles/storage.admin"
+	"roles/storage.objectAdmin"
+	"roles/iam.serviceAccountKeyAdmin"
+	"roles/iam.serviceAccountAdmin"
+	"roles/iam.securityAdmin"
+	"roles/iam.roleAdmin"
+	"roles/serviceusage.serviceUsageAdmin"
+)
 echo "Binding roles to service account '${SA_FULL_NAME}'..." | fold -s -w 80
-for ROLE in roles/compute.networkAdmin roles/compute.securityAdmin roles/storage.admin roles/storage.objectAdmin roles/iam.serviceAccountKeyAdmin roles/iam.serviceAccountAdmin roles/iam.securityAdmin roles/iam.roleAdmin roles/serviceusage.serviceUsageAdmin; do
+for ROLE in "${REQUIRED_ROLES[@]}"; do
 	echo "  * Binding ${ROLE}..."
 	COMMAND_OUTPUT=$(gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
 		--member="serviceAccount:${SA_FULL_NAME}" \
@@ -364,22 +386,49 @@ reset_command_output_trap
 
 echo "Waiting for GCP to pick up recent IAM changes..."
 IAM_TEST_BUCKET_NAME="cf-bootstrap-$(date | openssl dgst -sha1 -binary | xxd -p)"
-while ! gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${IAM_TEST_BUCKET_NAME}" >/dev/null 2>&1; do
+until GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${IAM_TEST_BUCKET_NAME}") 2>&1); do
+	if [[ $GSUTIL_OUTPUT != *"AccessDeniedException: 403 $SA_FULL_NAME does not have storage.buckets.create access to the Google Cloud project."* ]]; then
+		echo "${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}"
+		echo "Please review the command output and fix the root cause:"
+		echo "=============================================="
+		echo "$GSUTIL_OUTPUT"
+		echo "=============================================="
+		echo
+	fi
 	echo "  * IAM permissions not propagated yet. Waiting another 5 seconds..."
 	sleep 5
 done
 
 echo "Permissions propagated, cleaning up GCS test resource..."
-while ! gsutil -i "${SA_FULL_NAME}" rb -f "gs://${IAM_TEST_BUCKET_NAME}" >/dev/null 2>&1; do
+until GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" rb "gs://${IAM_TEST_BUCKET_NAME}") 2>&1); do
+	if [[ $GSUTIL_OUTPUT != *"Removing gs://${IAM_TEST_BUCKET_NAME}/..."* ]]; then
+		echo "${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}"
+		echo "Please review the command output and fix the root cause:"
+		echo "=============================================="
+		echo "$GSUTIL_OUTPUT"
+		echo "=============================================="
+		echo
+	fi
 	echo "  * Still cleaning up. Waiting another 5 seconds..."
 	sleep 5
 done
 
-if gsutil -i "${SA_FULL_NAME}" -q ls "gs://${GCS_BUCKET}" >/dev/null 2>&1; then
+if GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" -q ls "gs://${GCS_BUCKET}") 2>&1); then
+	if [[ $GSUTIL_OUTPUT != *"gs://${GCS_BUCKET}/"* ]]; then
+		echo "${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}"
+		echo "Please review the command output and fix the root cause:"
+		echo "=============================================="
+		echo "$GSUTIL_OUTPUT"
+		echo "=============================================="
+		echo
+	fi
 	echo "${TEXT_COLOR_YELLOW}GCS bucket ${GCS_BUCKET} already exists. Skipping creation.${TEXT_ALL_OFF}" | fold -s -w 80
 else
 	echo "Creating GCS bucket for Terraform state..."
-	gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${GCS_BUCKET}"
+	if ! gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${GCS_BUCKET}"; then
+		log_error "Error occured during GCS bucket creation ... can't proceed"
+		exit 1
+	fi
 fi
 set_command_output_trap
 
@@ -415,7 +464,7 @@ COMMAND_OUTPUT=$(cd "${OUTPUT_DIR}" && terraform fmt -recursive 2>&1)
 
 cat <<-END_OF_DOC
 	${TEXT_COLOR_MAGENTA}
-	$(echo "The generated Terraform code files are now located inside '${OUTPUT_DIR}'. Please review then now!" | fold -s -w 80)
+	$(echo "The generated Terraform code files are now located inside '${OUTPUT_DIR}'. Please review them now!" | fold -s -w 80)
 
 	${TEXT_BOLD}Please check the generated code carefully, expecially if you bootstrap an
 	already used project. It may need adjustments to reflect your already existing
