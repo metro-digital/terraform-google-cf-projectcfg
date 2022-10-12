@@ -388,12 +388,16 @@ echo "Waiting for GCP to pick up recent IAM changes..."
 IAM_TEST_BUCKET_NAME="cf-bootstrap-$(date | openssl dgst -sha1 -binary | xxd -p)"
 until GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${IAM_TEST_BUCKET_NAME}") 2>&1); do
 	if [[ $GSUTIL_OUTPUT != *"AccessDeniedException: 403 $SA_FULL_NAME does not have storage.buckets.create access to the Google Cloud project."* ]]; then
-		echo "${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}"
-		echo "Please review the command output and fix the root cause:"
-		echo "=============================================="
-		echo "$GSUTIL_OUTPUT"
-		echo "=============================================="
-		echo
+		if [[ $GSUTIL_OUTPUT != *"AccessDeniedException: Service account impersonation failed. Please go to the Google Cloud Platform Console \
+		(https://cloud.google.com/console), select IAM & admin, then Service Accounts, and grant your originating account the Service Account \
+		Token Creator role on the target service account."* ]]; then
+			echo "${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}"
+			echo "Please review the command output and fix the root cause:"
+			echo "=============================================="
+			echo "$GSUTIL_OUTPUT"
+			echo "=============================================="
+			echo
+		fi
 	fi
 	echo "  * IAM permissions not propagated yet. Waiting another 5 seconds..."
 	sleep 5
@@ -533,7 +537,7 @@ else
 
 	# Build roles only plan
 	echo "Building a plan to roll out all IAM changes..."
-	(rm -f bootstrap.tfplan && terraform plan -target module.project-cfg.google_project_iam_binding.roles -out bootstrap.tfplan >/dev/null 2>&1)
+	COMMAND_OUTPUT=$(rm -f bootstrap.tfplan && terraform plan -target module.project-cfg.google_project_iam_binding.roles -out bootstrap.tfplan 2>&1)
 	TF_PLAN=$(terraform show bootstrap.tfplan)
 	cat <<-END_OF_DOC
 
