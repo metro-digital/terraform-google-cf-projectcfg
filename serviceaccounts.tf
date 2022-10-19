@@ -125,3 +125,23 @@ resource "google_service_account_iam_policy" "service_accounts" {
     google_service_account.service_accounts
   ]
 }
+
+# servicenetworking.googleapis.com is forcelly enabled by this module
+# but sometimes this permission is not set on needed service account
+# this recource makes sure it's always there.
+resource "google_project_service_identity" "servicenetworking-service-account" {
+  provider = google-beta
+
+  project = data.google_project.project.project_id
+  service = "servicenetworking.googleapis.com"
+}
+
+resource "google_project_iam_member" "servicenetworking-service-account-binding" {
+  project = data.google_project.project.project_id
+  role    = "roles/servicenetworking.serviceAgent"
+  member  = "serviceAccount:${google_project_service_identity.servicenetworking-service-account.email}"
+
+  depends_on = [
+    google_project_service.project
+  ]
+}
