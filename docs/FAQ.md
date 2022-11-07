@@ -11,6 +11,7 @@
 - [terraform](#terraform)
   - [How to prepare a new generated project for this module?](#how-to-prepare-a-new-generated-project-for-this-module)
   - [Error creating Network: googleapi: Error 409: The resource 'projects/<projectid>/global/networks/default' already exists](#error-creating-network-googleapi-error-409-the-resource-projectsprojectidglobalnetworksdefault-already-exists)
+  - [Error: Error waiting for Create Service Networking Connection: Error code 7, message: Required 'compute.globalAddresses.list' permission for 'projects/<project_number>'](#error-error-waiting-for-create-service-networking-connection-error-code-7-message-required-computeglobaladdresseslist-permission-for-projectsproject_number)
 - [GitHub](#github)
   - [How to use Workload Identity Federation with GitHub Actions](#how-to-use-workload-identity-federation-with-github-actions)
   - [Error creating WorkloadIdentityPool - Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource](#error-creating-workloadidentitypool---error-403-permission-iamworkloadidentitypoolscreate-denied-on-resource)
@@ -159,6 +160,16 @@ See also:
 
 - [terraform network import]
 - [terraform subnetwork import]
+
+### Error: Error waiting for Create Service Networking Connection: Error code 7, message: Required 'compute.globalAddresses.list' permission for 'projects/<project_number>'
+
+This module makes sure that the `servicenetworking.googleapis.com` service is enabled. Our bootstrap script also activates the service. Activating this service creates an internal google service account `service-<project_number>@service-networking.iam.gserviceaccount.com` binded to a `servicenetworking.serviceAgent` role. This service and its properly configured internal service account are crucial for many parts of the code around network operations.
+
+For some reasons like, for example, a human error or a faulty terraform code, sometimes you might end up in a situation when terraform fails with an error from above due to missing needed role binding. In some cases errors might look a bit different and hard to track to exact problems as you might try to make sure that your IAC account has permissions from the error message and it would have it, leaving you with no clue what is wrong.
+
+If you encounter such cases please make sure the service's internal service account has proper binding. Add needed role in UI or with help of `gcloud`:
+`gcloud projects add-iam-policy-binding <project_id> --member='serviceAccount:service-<project_number>@service-networking.iam.gserviceaccount.com' --role='roles/servicenetworking.serviceAgent'`
+
 
 ## GitHub
 

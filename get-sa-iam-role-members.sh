@@ -20,7 +20,7 @@ set -u
 set -e
 
 function check_program() {
-	set +e # next command my fail - allow failure
+	set +e # next command may fail - allow failure
 	PRG="$(command -v "$1" 2>/dev/null)"
 	set -e # exit script on any error again
 	if [ -z "$PRG" ]; then

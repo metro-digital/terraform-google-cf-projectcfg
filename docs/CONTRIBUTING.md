@@ -30,7 +30,7 @@ module interfaces are changed.
 
 ### Execution
 
-Documentation is updated when running the pre-commiot hooks: `pre-commit run -a`
+Documentation is updated when running the pre-commit hooks: `pre-commit run -a`
 
 [pcf]: https://pre-commit.com/
 [pcf-doctoc]: https://github.com/thlorenz/doctoc
