@@ -15,7 +15,7 @@
 module "project-cfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = local.project_id
-  version    = ">=2.0.5"
+  version    = ">=2.1"
 
   roles = {
     "roles/viewer" = [
@@ -23,17 +23,6 @@ module "project-cfg" {
       local.iam_developer_group
     ],
     "roles/cloudsupport.techSupportEditor" = [ local.iam_manager_group ]
-    "roles/compute.networkAdmin"           = [ local.iam_iac_service_account ]
-    "roles/vpcaccess.admin"                = [ local.iam_iac_service_account ]
-    "roles/compute.securityAdmin"          = [ local.iam_iac_service_account ]
-    "roles/storage.admin"                  = [ local.iam_iac_service_account ]
-    "roles/storage.objectAdmin"            = [ local.iam_iac_service_account ]
-    "roles/iam.serviceAccountKeyAdmin"     = [ local.iam_iac_service_account ]
-    "roles/iam.serviceAccountAdmin"        = [ local.iam_iac_service_account ]
-    "roles/iam.securityAdmin"              = [ local.iam_iac_service_account ]
-    "roles/iam.roleAdmin"                  = [ local.iam_iac_service_account ]
-    "roles/serviceusage.serviceUsageAdmin" = [ local.iam_iac_service_account ]
-    ${GITHUB_REPOSITORY_IAM_BLOCK_STRING}
   }
 
   service_accounts = {
@@ -47,6 +36,19 @@ module "project-cfg" {
           local.iam_iac_service_account
         ]
       }
+      project_roles = [
+          ${GITHUB_REPOSITORY_IAM_ROLE_STRING}
+          "roles/compute.networkAdmin",
+          "roles/vpcaccess.admin",
+          "roles/compute.securityAdmin",
+          "roles/storage.admin",
+          "roles/storage.objectAdmin",
+          "roles/iam.serviceAccountKeyAdmin",
+          "roles/iam.serviceAccountAdmin",
+          "roles/iam.securityAdmin",
+          "roles/iam.roleAdmin",
+          "roles/serviceusage.serviceUsageAdmin"
+      ]
       ${GITHUB_REPOSITORY_SA_BLOCK_STRING}
     }
   }

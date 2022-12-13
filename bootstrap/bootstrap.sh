@@ -168,10 +168,10 @@ fi
 
 if [ "${GITHUB_REPOSITORY_PARAM:-notset}" != "notset" ]; then
 	GITHUB_REPOSITORY_SA_BLOCK_STRING="github_action_repositories = [ \"${GITHUB_REPOSITORY_PARAM}\" ]"
-	GITHUB_REPOSITORY_IAM_BLOCK_STRING="\"roles/iam.workloadIdentityPoolAdmin\" = [ local.iam_iac_service_account ]"
+	GITHUB_REPOSITORY_IAM_ROLE_STRING="\"roles/iam.workloadIdentityPoolAdmin\","
 else
 	GITHUB_REPOSITORY_SA_BLOCK_STRING=""
-	GITHUB_REPOSITORY_IAM_BLOCK_STRING=""
+	GITHUB_REPOSITORY_IAM_ROLE_STRING=""
 fi
 
 echo "Fetching project details..."
@@ -475,7 +475,7 @@ export SA_SHORT_NAME="${SA_NAME}"
 export MANAGER_GROUP
 export DEVELOPER_GROUP
 export GITHUB_REPOSITORY_SA_BLOCK_STRING
-export GITHUB_REPOSITORY_IAM_BLOCK_STRING
+export GITHUB_REPOSITORY_IAM_ROLE_STRING
 
 echo "Generating Terraform code..."
 while IFS= read -r -d '' SOURCE_FILE; do

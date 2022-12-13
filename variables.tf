@@ -138,13 +138,16 @@ variable "roles" {
   description = <<-EOD
     IAM roles and their members.
 
+    If you create a service account in this project via the `service_accounts` input, we recommend
+    to use the `project_roles` attribute of the respective service account to grant it permissions
+    on the project's IAM policy. This allows you to better re-use your code in staged environments.
+
     Example:
     ```
     roles = {
       "roles/bigquery.admin" = [
         "group:customer.project-role@cloudfoundation.metro.digital",
         "user:some.user@metro.digital",
-        "serviceAccount:exmple-sa@example-prj..iam.gserviceaccount.com"
       ],
       "roles/cloudsql.admin" = [
         "group:customer.project-role@cloudfoundation.metro.digital",
@@ -206,22 +209,26 @@ variable "service_accounts" {
 
     **`description` (optional):** Human-readable description shown in Google Cloud Console
 
-    **`iam` (optional):** IAM permissions assigned to this Service Account as a *resource*. This means who else can do something
-    on this Service Account. An example: if you grant `roles/iam.serviceAccountKeyAdmin` to a group here, this group
-    will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to use BigQuery
-    you need to use the project-wide `roles` input to do so.
+    **`iam` (optional):** IAM permissions assigned to this Service Account as a *resource*. This defines which principal
+    can do something on this Service Account. An example: If you grant `roles/iam.serviceAccountKeyAdmin` to a group here,
+    this group will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to use
+    BigQuery, you need to use the project-wide `roles` input or, even better, use the `project_roles` attribute to do so.
 
-    **`iam_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative policy with
-    its current value as defined in the Google Cloud Platform. Example use case: Composer 2 adds values to
-    `roles/iam.workloadIdentityUser` binding when environment is created or updated. Thus, you might want to automatically
-    import those permissions.
+    **`project_roles` (optional):** IAM permissions assigned to this Service Account on *project level*.
+    This parameter is merged with whatever is provided as the project's IAM policy via the `roles` input.
 
-    **`github_action_repositories` (optional):** You can list GitHub repositories (format: user/repo) here.
-    A Workload Identity Pool and a Workload Identity Pool provider needed for Workload Identity Federation will be created automatically.
-    Each repository given gains permissions to authenticate as this service account using Workload Identity Federation.
-    This allows any GitHub Action pipeline to use this service account without the need for service account keys.
-    An example can be found within the [FAQ].
-    For more details, see the documentation for Google's GitHub action
+    **`iam_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative policy
+    with its current value as defined in the Google Cloud Platform. Example use case: Composer 2 adds values to
+    `roles/iam.workloadIdentityUser` binding when an environment is created or updated. Thus, you might want to
+    automatically import those permissions.
+
+    **`github_action_repositories` (optional):** You can list GitHub repositories (format: `user/repo`) here.
+    A Workload Identity Pool and a Workload Identity Pool provider needed for Workload Identity Federation will be
+    created automatically. Each repository given gains permissions to authenticate as this service account using
+    Workload Identity Federation. This allows any GitHub Action pipeline to use this service account without the need
+    for service account keys. An example can be found within the [FAQ].
+
+    For more details, see the documentation for Google's GitHub action for authentication:
     [`google-github-actions/auth`](https://github.com/google-github-actions/auth).
 
     **Remark:** If you configure `github_action_repositories`, the module binds a member for each repository to the role
@@ -236,14 +243,22 @@ variable "service_accounts" {
     ```
       service_accounts = {
         deployments = {
-          display_name = "Deployments"
-          description  = "Service Account to deploy application"
-          description  = "
-          iam          = {
+          display_name  = "Deployments"
+          description   = "Service Account to deploy application"
+
+          # Grant this service account Cloud Run Admin on project level
+          project_roles = [
+            "roles/run.admin"
+          ]
+
+          # Allow specific group to create keys for this Service Account only
+          iam = {
             "roles/iam.serviceAccountKeyAdmin" = [
               "group:customer.project-role@cloudfoundation.metro.digital",
             ]
           }
+
+          # This service account will be used by GitHub Action deployments in the given repository
           github_action_repositories = [
             "my-user-or-organisation/my-great-repo"
           ]
@@ -258,7 +273,7 @@ variable "service_accounts" {
           description                 = "Service Account to run Composer 2"
           iam                         = {} # No special Service Account resource IAM permissions
           iam_non_authoritative_roles = [
-            # maintained by Composer service - imports any existing value
+            # maintained by Composer service automatically - imports any existing value
             "roles/iam.workloadIdentityUser"
           ]
         }
@@ -271,6 +286,7 @@ variable "service_accounts" {
     display_name                = string
     description                 = optional(string)
     iam                         = map(list(string))
+    project_roles               = optional(list(string))
     iam_non_authoritative_roles = optional(list(string))
     github_action_repositories  = optional(list(string))
   }))
