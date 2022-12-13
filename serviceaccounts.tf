@@ -126,9 +126,9 @@ resource "google_service_account_iam_policy" "service_accounts" {
   ]
 }
 
-# servicenetworking.googleapis.com is forcelly enabled by this module
-# but sometimes this permission is not set on needed service account
-# this recource makes sure it's always there.
+# servicenetworking.googleapis.com is always enabled by this module
+# but sometimes this permission is not set on the needed service account.
+# This resource makes sure it's always there.
 resource "google_project_service_identity" "servicenetworking-service-account" {
   provider = google-beta
 
