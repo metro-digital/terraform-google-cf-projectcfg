@@ -34,24 +34,18 @@ module "project-cfg" {
 
   # Create a Service Account
   service_accounts = {
-    # ...
     bq-reader = {
       display_name = "BigQuery Reader"
-      iam          = {}    # see comment below!
+      iam          = {} # see comment below!
+      # Grant this service account the BigQuery user role on project level.
+      project_roles = [
+        "roles/bigquery.user"
+      ]
     }
+
     # ...
   }
 
-  # Grant BigQuery permissions to SA
-  "roles" = {
-    # ...
-    "roles/bigquery.user" = [
-      # ...
-      "serviceAccount:bq-reader@metro-cf-example-ex1-e8v.iam.gserviceaccount.com"
-      # ...
-    ]
-    # ...
-  }
   # ...
 }
 ```
@@ -108,7 +102,8 @@ and map them to your Kubernetes Service Account. If you configure this
 Service Account for a pod, the pod will run with permissions of that GCP
 Service Account.
 
-Example:
+In the following example, the service account `bq` inside the Kubernetes
+namespace `default` is mapped to the IAM service account `bq-reader`.
 
 ```hcl
 module "project-cfg" {
@@ -119,24 +114,23 @@ module "project-cfg" {
 
   # Create a Service Account and allow a K8S SA to use it for WorkLoad Identity
   service_accounts = {
-    # ...
-    some-pipeline-account = {
-      display_name = "Used for GitHub Action pipeline in repository <someorg>/<somerepo>"
-      iam          = {}
+    bq-reader = {
+      display_name = "BigQuery Reader"
+      description  = "Used to read data from my dataset."
+      iam          = {
+        "roles/iam.workloadIdentityUser" = [
+          "serviceAccount:metro-cf-example-ex1-e8v.svc.id.goog[default/bq]"
+        ]
+      }
+      project_roles = [
+        "roles/bigquery.jobUser",
+        "roles/bigquery.dataViewer"
+      ]
     }
+
     # ...
   }
 
-  # Grant BigQuery permissions to SA
-  "roles" = {
-    # ...
-    "roles/bigquery.user" = [
-      # ...
-      "serviceAccount:bq-reader@metro-cf-example-ex1-e8v.iam.gserviceaccount.com"
-      # ...
-    ]
-    # ...
-  }
   # ...
 }
 ```
