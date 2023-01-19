@@ -40,8 +40,8 @@ resource "google_project_service" "github-actions" {
 }
 
 resource "google_iam_workload_identity_pool" "github-actions" {
+  provider = google
   count    = local.github_actions_enabled
-  provider = google-beta
   project  = data.google_project.project.project_id
 
   workload_identity_pool_id = "github-actions"
@@ -55,8 +55,8 @@ resource "google_iam_workload_identity_pool" "github-actions" {
 }
 
 resource "google_iam_workload_identity_pool_provider" "github" {
+  provider = google
   count    = local.github_actions_enabled
-  provider = google-beta
   project  = data.google_project.project.project_id
 
   workload_identity_pool_id          = google_iam_workload_identity_pool.github-actions[0].workload_identity_pool_id
