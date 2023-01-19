@@ -14,7 +14,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 3298ddab3c13dd77d6ce1fc0baf97691430d84b0  # frozen: v4.3.0
+    rev: f71fa2c1f9cf5cb705f73dffe4b21f7c61470ba9  # frozen: v4.4.0
     hooks:
       - id: detect-private-key
       - id: end-of-file-fixer
@@ -22,7 +22,7 @@ repos:
       - id: mixed-line-ending
         args: ['--fix', 'lf']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: f5aa7c83b61c6a2838b1ee67f5c706623fe015cc  # frozen: v1.75.0
+    rev: 1d54ea2b9950097568c6a7a2e2bcb6d4b4ebfb61  # frozen: v1.77.0
     hooks:
       - id: terraform_fmt
         exclude: ^/.+/$
@@ -34,7 +34,7 @@ repos:
           - --args=--config-file=__GIT_WORKING_DIR__/.tfsec/config.yml
       - id: terraform_docs
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: 9cce2940414e9560ae4c8518ddaee2ac1863a4d2  # frozen: v1.28.0
+    rev: b9e1fd18c1acbaa4b0028196f8925ce4e91970d9  # frozen: v1.29.0
     hooks:
       - id: yamllint
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
