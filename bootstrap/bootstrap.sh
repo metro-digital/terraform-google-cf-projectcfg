@@ -49,7 +49,7 @@ function print_usage_and_exit() {
 		                Terraform changes (default: terraform-iac-pipeline).
 		  -b (optional) Bucket name without 'gs://' which will store the Terraform
 		                state files (default: 'tf-state-<GCP_PROJECT_ID>').
-		  -o (optional) relativ or absolute path to directory that will store the
+		  -o (optional) relative or absolute path to directory that will store the
 		                generated Terraform code (default: 'iac-output').
 		  -g (optional) GitHub repository in the format '<owner/org>/<reponame>'. If
 		                given, the Terraform code will be configured to enable the Workload
@@ -57,7 +57,7 @@ function print_usage_and_exit() {
 		                required for keyless authentication from GitHub Workflows which
 		                is strongly recommended. This can also be set up later.
 		  -n (optional) If set, no Terraform code is generated. Only the service
-		                account and state bucket are cretaed. In addition the needed
+		                account and state bucket are created. In addition the needed
 		                APIs are enabled. Only use this option if you use a different
 		                template for newly created GCP projects.
 	END_OF_DOC
