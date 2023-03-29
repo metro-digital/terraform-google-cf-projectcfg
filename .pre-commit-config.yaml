@@ -22,7 +22,7 @@ repos:
       - id: mixed-line-ending
         args: ['--fix', 'lf']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: 1d54ea2b9950097568c6a7a2e2bcb6d4b4ebfb61  # frozen: v1.77.0
+    rev: 7fb95618a952c1b4e86f35ee9103d3a67a86df0d  # frozen: v1.77.1
     hooks:
       - id: terraform_fmt
         exclude: ^/.+/$
@@ -33,8 +33,10 @@ repos:
         args:
           - --args=--config-file=__GIT_WORKING_DIR__/.tfsec/config.yml
       - id: terraform_docs
+        args:
+          - --args=--config=.terraform-docs.yml
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: b9e1fd18c1acbaa4b0028196f8925ce4e91970d9  # frozen: v1.29.0
+    rev: 9d0f59876dc6882e263b2657ab42a1ced4c0207d  # frozen: v1.30.0
     hooks:
       - id: yamllint
   - repo: https://github.com/jumanjihouse/pre-commit-hooks

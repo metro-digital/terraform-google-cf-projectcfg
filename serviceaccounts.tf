@@ -1,4 +1,4 @@
-# Copyright 2022 METRO Digital GmbH
+# Copyright 2023 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -94,6 +94,15 @@ data "google_iam_policy" "service_accounts" {
           "principalSet://iam.googleapis.com/%s/attribute.repository/%s",
           google_iam_workload_identity_pool.github-actions[0].name,
           repo
+        )
+      ] : [],
+      # Cloud Native Runtime Service Accounts
+      each.value.runtime_service_accounts != null ? [
+        for runtime_sa in each.value.runtime_service_accounts : format(
+          "principal://iam.googleapis.com/%s/subject/system:serviceaccount:%s:%s",
+          google_iam_workload_identity_pool.runtime-k8s[runtime_sa.cluster_id].name,
+          runtime_sa.namespace,
+          runtime_sa.service_account
         )
       ] : [],
       # if roles/iam.workloadIdentityUser is given by user in the authoritative iam section pick this data
