@@ -1,4 +1,4 @@
-# Copyright 2022 METRO Digital GmbH
+# Copyright 2023 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,33 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  # Check if ANY given service account has a GitHub action repository configured.
-  github_actions_enabled = length(compact([
-    for sa, config in var.service_accounts : sa if can(length(config.github_action_repositories) > 0)
-  ])) > 0 ? 1 : 0
-
-  # We also need to enable some services to make the Workload Identity Federation setup possible.
-  github_actions_needed_services = local.github_actions_enabled > 0 ? toset([
-    "cloudresourcemanager.googleapis.com",
-    "iamcredentials.googleapis.com",
-    "sts.googleapis.com"
-  ]) : toset([])
-}
-
-resource "google_project_service" "github-actions" {
-  project  = data.google_project.project.project_id
-  for_each = local.github_actions_needed_services
-  service  = each.key
-
-  # The user may enable/use the needed services somewhere else, too!
-  # Hence, we are never disabling them again, even if we initially enabled them here.
-  # Keeping the service enabled is way less dangerous than disabling them, even if
-  # we do not have a reason to keep them enabled any longer. Users can still disable
-  # via CLI / UI if needed.
-  disable_on_destroy = false
-}
-
 resource "google_iam_workload_identity_pool" "github-actions" {
   provider = google
   count    = local.github_actions_enabled
@@ -50,7 +23,7 @@ resource "google_iam_workload_identity_pool" "github-actions" {
 
   depends_on = [
     google_project_iam_binding.roles,
-    google_project_service.github-actions
+    google_project_service.wif
   ]
 }
 

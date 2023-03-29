@@ -16,6 +16,8 @@
   - [How to use Workload Identity Federation with GitHub Actions](#how-to-use-workload-identity-federation-with-github-actions)
   - [Error creating WorkloadIdentityPool - Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource](#error-creating-workloadidentitypool---error-403-permission-iamworkloadidentitypoolscreate-denied-on-resource)
   - [Error creating WorkloadIdentityPool - Error 409: Requested entity already exists](#error-creating-workloadidentitypool---error-409-requested-entity-already-exists)
+- [Cloud Native Runtime Kubernetes Clusters](#cloud-native-runtime-kubernetes-clusters)
+  - [How to use Workload Identity Federation](#how-to-use-workload-identity-federation)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -260,6 +262,81 @@ terraform import 'module.project-cfg.google_iam_workload_identity_pool.github-ac
 terraform import 'module.project-cfg.google_iam_workload_identity_pool_provider.github[0]' $GCP_PROJECT_ID/github-actions/github
 ```
 
+## Cloud Native Runtime Kubernetes Clusters
+
+### How to use Workload Identity Federation
+Cloud Native Runtime clusters support [Workload Identity Federation via OIDC provider](https://confluence.metrosystems.net/x/rLT3Ig).
+For details on the Kubernetes-related configuration, please see the documentation provided by the Runtime team. Within
+your Cloud Foundation project, you need to set up a Workload Identity Pool and attach an OIDC provider per cluster.
+This is done by this module automatically, if you configure a Service Account to be used from a Runtime kubernetes cluster:
+
+```hcl
+module "project-cfg" {
+  source     = "metro-digital/cf-projectcfg/google"
+  project_id = "metro-cf-example-ex1-e8v"
+
+  # ...
+
+  # Create a Service Account and allow a K8s SA to use it via WorkLoad Identity Federation
+  service_accounts = {
+    # ...
+    runtime-sa = {
+      display_name  = "My Runtime Workload"
+      description   = "Workload running in Cloud Native Runtime Cluster"
+
+      # No special permissions in the Service Accounts IAM policy
+      iam = {}
+
+      # Allow this Service Account to execute BigQuery jobs
+      # Access to certain datasets is configured in the dataset's IAM policy, so no project level
+      # access is required (least privileges approach)
+      project_roles = [
+        "roles/bigquery.jobUser"
+      ]
+      runtime_service_accounts = [
+        # You can specify multiple of the following objects if needed
+        {
+          cluster_id      = "mycluster-id-1"
+          namespace       = "some-namespace"
+          service_account = "some-service-account-name"
+        }
+      ]
+    }
+    # ...
+  }
+  # ...
+}
+```
+
+Within your Kubernetes configuration, adjust the Service Account definition like this:
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    cloud.google.com/audience: cf.metro.cloud/wif-cloud-native-runtime
+    cloud.google.com/service-account-email: <GCP Service Account Email>
+    cloud.google.com/token-expiration: "3600"
+    cloud.google.com/workload-identity-provider: projects/<GCP Project Number>/locations/global/workloadIdentityPools/<MD5 Sum of Runtime Cluster ID>/providers/kubernetes
+  name: <K8s Service Account Name>
+```
+
+Ensure you replace Service Account E-Mail, Project Number and MD5 Sum of Runtime Cluster ID with the correct values.
+
+You can get the project number using the UI by navigating to your [project's dashboard](https://console.cloud.google.com/home/dashboard)
+or via the following gcloud command:
+
+```shell
+gcloud projects describe YOUR_GCP_PROJECT_ID --format='value(projectNumber)'
+```
+
+The Workload Identity Provider Pool can be found via the UI by navigating to the [IAM and admin -> Workload Identity Federation section](https://console.cloud.google.com/iam-admin/workload-identity-pools).
+Alternatively, you can list the Pool via the following gcloud command:
+
+```shell
+gcloud iam workload-identity-pools list --project YOUR_GCP_PROJECT_ID --location global
+```
 
 [workload identity pools]: https://console.cloud.google.com/iam-admin/workload-identity-pools
 [terraform network import]: https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_network#import

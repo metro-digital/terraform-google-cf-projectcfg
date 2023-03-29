@@ -1,4 +1,4 @@
-# Copyright 2022 METRO Digital GmbH
+# Copyright 2023 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -210,9 +210,10 @@ variable "service_accounts" {
     **`description` (optional):** Human-readable description shown in Google Cloud Console
 
     **`iam` (optional):** IAM permissions assigned to this Service Account as a *resource*. This defines which principal
-    can do something on this Service Account. An example: If you grant `roles/iam.serviceAccountKeyAdmin` to a group here,
-    this group will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to use
-    BigQuery, you need to use the project-wide `roles` input or, even better, use the `project_roles` attribute to do so.
+    can do something on this Service Account. An example: If you grant `roles/iam.serviceAccountKeyAdmin` to a group
+    here, this group will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to
+    use BigQuery, you need to use the project-wide `roles` input or, even better, use the `project_roles` attribute to
+    do so.
 
     **`project_roles` (optional):** IAM permissions assigned to this Service Account on *project level*.
     This parameter is merged with whatever is provided as the project's IAM policy via the `roles` input.
@@ -222,8 +223,15 @@ variable "service_accounts" {
     `roles/iam.workloadIdentityUser` binding when an environment is created or updated. Thus, you might want to
     automatically import those permissions.
 
+    **`runtime_service_accounts` (optional):** You can list Kubernetes Service Accounts within Cloud Native Runtime
+    clusters here. For details on the format, see the example below. A Workload Identity Pool and a Workload Identity
+    Provider needed for Workload Identity Federation will be created automatically. Each service account given gains
+    permissions to authenticate as this service account using Workload Identity Federation. This allows workloads running
+    in Cloud Native Runtime clusters to use this service account without the need for service account keys. A detailed
+    example can be found within the [FAQ].
+
     **`github_action_repositories` (optional):** You can list GitHub repositories (format: `user/repo`) here.
-    A Workload Identity Pool and a Workload Identity Pool provider needed for Workload Identity Federation will be
+    A Workload Identity Pool and a Workload Identity Provider needed for Workload Identity Federation will be
     created automatically. Each repository given gains permissions to authenticate as this service account using
     Workload Identity Federation. This allows any GitHub Action pipeline to use this service account without the need
     for service account keys. An example can be found within the [FAQ].
@@ -233,15 +241,34 @@ variable "service_accounts" {
 
     **Remark:** If you configure `github_action_repositories`, the module binds a member for each repository to the role
     `roles/iam.workloadIdentityUser` inside the service account's IAM policy. This is done *regardless of whether
-    or not* you list this role in the `iam_non_authoritative_roles` key.
+    or not* you list this role in the `iam_non_authoritative_roles` key. The same happens if you use
+    `runtime_service_accounts`. A member per runtime service account is added to the service account's IAM policy.
 
-    **Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principle that is
-    executing the terraform code (most likely your service account used in your pipeline) if you plan to use
-    `github_action_repositories`.
+    **Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principal that is
+    executing the terraform code (most likely a service account used in a pipeline) if you plan to use
+    `github_action_repositories` or `runtime_service_accounts`.
 
     Example:
     ```
       service_accounts = {
+        runtime-sa = {
+          display_name  = "My Runtime Workload"
+          description   = "Workload running in Cloud Native Runtime Cluster"
+
+          # Grant this service account to execute BigQuery jobs
+          # access to certain datasets is configured in dataset IAM policy
+          project_roles = [
+            "roles/bigquery.jobUser"
+          ]
+          runtime_service_accounts = [
+            # You can specify multiple of the following objects if needed
+            {
+              cluster_id      = "mycluster-id-1"
+              namespace       = "some-namespace"
+              service_account = "some-service-account-name"
+            }
+          ]
+        }
         deployments = {
           display_name  = "Deployments"
           description   = "Service Account to deploy application"
@@ -289,6 +316,11 @@ variable "service_accounts" {
     project_roles               = optional(list(string))
     iam_non_authoritative_roles = optional(list(string))
     github_action_repositories  = optional(list(string))
+    runtime_service_accounts = optional(list(object({
+      cluster_id      = string
+      namespace       = string
+      service_account = string
+    })))
   }))
 
   default = {}
