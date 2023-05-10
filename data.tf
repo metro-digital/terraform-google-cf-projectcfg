@@ -31,8 +31,8 @@ data "external" "metro_netblocks" {
 
 locals {
   metro_netblocks = {
-    all_public_v4 = split(" ", data.external.metro_netblocks.result.ipv4)
-    all_public_v6 = split(" ", data.external.metro_netblocks.result.ipv6)
+    ipv4 = split(" ", data.external.metro_netblocks.result.ipv4)
+    ipv6 = split(" ", data.external.metro_netblocks.result.ipv6)
   }
 }
 

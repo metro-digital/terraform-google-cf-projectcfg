@@ -45,7 +45,7 @@ resource "google_compute_firewall" "allow-icmp-metro-public" {
     "fw-allow-icmp-metro-public",
   ]
 
-  source_ranges = local.metro_netblocks.all_public_v4
+  source_ranges = local.metro_netblocks.ipv4
 }
 
 resource "google_compute_firewall" "allow-http-metro-public" {
@@ -66,7 +66,7 @@ resource "google_compute_firewall" "allow-http-metro-public" {
     "fw-allow-http-metro-public",
   ]
 
-  source_ranges = local.metro_netblocks.all_public_v4
+  source_ranges = local.metro_netblocks.ipv4
 }
 
 resource "google_compute_firewall" "allow-https-metro-public" {
@@ -87,7 +87,7 @@ resource "google_compute_firewall" "allow-https-metro-public" {
     "fw-allow-https-metro-public",
   ]
 
-  source_ranges = local.metro_netblocks.all_public_v4
+  source_ranges = local.metro_netblocks.ipv4
 }
 
 resource "google_compute_firewall" "allow-ssh-metro-public" {
@@ -108,7 +108,7 @@ resource "google_compute_firewall" "allow-ssh-metro-public" {
     "fw-allow-ssh-metro-public",
   ]
 
-  source_ranges = local.metro_netblocks.all_public_v4
+  source_ranges = local.metro_netblocks.ipv4
 }
 
 resource "google_compute_firewall" "allow-ssh-iap" {
