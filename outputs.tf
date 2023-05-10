@@ -37,3 +37,16 @@ output "service_accounts" {
     google_service_account.service_accounts
   ]
 }
+
+output "metro_netblocks" {
+  description = <<-EOD
+    METRO public netblocks detected and used by this module
+
+    Structure:
+    {
+      ipv4 = list(string)
+      ipv6 = list(string)
+    }
+  EOD
+  value       = local.metro_netblocks
+}
