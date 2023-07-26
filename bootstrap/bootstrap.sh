@@ -369,7 +369,6 @@ REQUIRED_ROLES=(
 	"roles/compute.securityAdmin"
 	"roles/storage.admin"
 	"roles/storage.objectAdmin"
-	"roles/iam.serviceAccountKeyAdmin"
 	"roles/iam.serviceAccountAdmin"
 	"roles/iam.securityAdmin"
 	"roles/iam.roleAdmin"
