@@ -20,7 +20,6 @@ set -u
 # Helpers
 TEXT_BOLD="$(tput bold)"
 TEXT_COLOR_RED="$(tput setaf 1)"
-TEXT_COLOR_YELLOW="$(tput setaf 3)"
 TEXT_COLOR_MAGENTA="$(tput setaf 5)"
 TEXT_ALL_OFF="$(tput sgr0)"
 
@@ -56,10 +55,8 @@ function print_usage_and_exit() {
 		                Identity Federation support for GitHub Workflows. This is
 		                required for keyless authentication from GitHub Workflows which
 		                is strongly recommended. This can also be set up later.
-		  -n (optional) If set, no Terraform code is generated. Only the service
-		                account and state bucket are created. In addition the needed
-		                APIs are enabled. Only use this option if you use a different
-		                template for newly created GCP projects.
+		  -t (optional) Time to sleep for in between bootstrap stages exectution,
+		      required for GCP IAM changes to propagate (default: '5m').
 	END_OF_DOC
 	exit
 }
@@ -112,7 +109,7 @@ function gsutil_err_handling() {
 }
 
 # Parameter parsing
-while getopts ":p:s:b:o:g:nh" OPT; do
+while getopts ":p:s:b:o:g::t:h" OPT; do
 	case $OPT in
 	p)
 		GCP_PROJECT_ID="${OPTARG}"
@@ -129,8 +126,8 @@ while getopts ":p:s:b:o:g:nh" OPT; do
 	g)
 		GITHUB_REPOSITORY_PARAM="${OPTARG}"
 		;;
-	n)
-		NO_CODE_GEN='true'
+	t)
+		TIME_SLEEP_PARAM="${OPTARG}"
 		;;
 	:)
 		log_error "Option -${OPTARG} requires an argument"
@@ -155,6 +152,7 @@ check_program terraform
 check_program openssl
 check_program xxd
 check_program fold
+check_program dig
 
 # parameter validation / defaulting
 SA_NAME="${SA_NAME_PARAM:-terraform-iac-pipeline}"
@@ -173,6 +171,8 @@ else
 	GITHUB_REPOSITORY_SA_BLOCK_STRING=""
 	GITHUB_REPOSITORY_IAM_ROLE_STRING=""
 fi
+
+TIME_SLEEP="${TIME_SLEEP_PARAM:-5m}"
 
 echo "Fetching project details..."
 # determinate active gcloud account
@@ -215,11 +215,7 @@ IAM_DEVELOPER_GROUP="${IAM_MANAGER_GROUP/-manager@/-developer@}"
 DEVELOPER_GROUP="${IAM_DEVELOPER_GROUP#group:}"
 MANAGER_GROUP="${IAM_MANAGER_GROUP#group:}"
 
-if [ "${NO_CODE_GEN:-notset}" = 'true' ]; then
-	OUTPUT_HINT="No Terraform code will be generated."
-else
-	OUTPUT_HINT=$(echo "The generated Terraform code will be written to '${OUTPUT_DIR}'." | fold -s -w 80)
-fi
+OUTPUT_HINT=$(echo "The generated Terraform code will be written to '${OUTPUT_DIR}'." | fold -s -w 80)
 
 # all set - print details to user and ask to continue
 cat <<-EOF
@@ -284,344 +280,61 @@ if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
 	echo
 fi
 
-# skip all tests for the output directory in case no output should be generated
-if [[ "${NO_CODE_GEN:-notset}" != 'true' ]]; then
-	if [[ ! -d "${OUTPUT_DIR}" ]]; then
-		read -p "$(echo "Output directory '${OUTPUT_DIR}' does not exist. Create it (y/n)? " | fold -s -w 80)" -n 1 -r
-		echo
-		if [[ $REPLY =~ ^[Yy]$ ]]; then
-			echo "Creating '${OUTPUT_DIR}'"
-			if ! mkdir -p "${OUTPUT_DIR}"; then
-				log_error "Could not create output directory... can't proceed"
-				exit 1
-			fi
-		else
-			log_error "Aborted."
+if [[ ! -d "${OUTPUT_DIR}" ]]; then
+	read -p "$(echo "Output directory '${OUTPUT_DIR}' does not exist. Create it (y/n)? " | fold -s -w 80)" -n 1 -r
+	echo
+	if [[ $REPLY =~ ^[Yy]$ ]]; then
+		echo "Creating '${OUTPUT_DIR}'"
+		if ! mkdir -p "${OUTPUT_DIR}"; then
+			log_error "Could not create output directory... can't proceed"
 			exit 1
 		fi
 	else
-		if [ "$(ls -A "${OUTPUT_DIR}")" ]; then
-			read -p "$(echo "Output directory '${OUTPUT_DIR}' is not empty. Continue anyway (y/n)? " | fold -s -w 80)" -n 1 -r
-			echo
-			if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-				log_error "Aborted."
-				exit 1
-			fi
-		fi
+		log_error "Aborted."
+		exit 1
 	fi
-fi
-
-# ensure we print the error stored in COMMAND_OUTPUT before exiting the script
-set_command_output_trap
-
-echo "Binding roles to manager group '${IAM_MANAGER_GROUP}'..." | fold -s -w 80
-for role in roles/iam.serviceAccountAdmin roles/serviceusage.serviceUsageAdmin; do
-	echo "  * Binding $role..."
-	COMMAND_OUTPUT=$(gcloud --quiet projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
-		--member="${IAM_MANAGER_GROUP}" \
-		--role="$role" 2>&1)
-done
-
-echo "Enabling required APIs..."
-# compute is enabled during bootstrap as it creates service account
-# that needs permissions on project level. The "role only" apply
-# may fail if this account doesnt exist, and the targeted apply
-# ignores the dependencies
-#
-# servicenetworking is enabled as it needs a long preperation time,
-# and as this is an async action terraform sometimes fails at initial
-# runs (service not yet ready...)
-REQUIRED_APIS=(
-	"iam.googleapis.com"
-	"cloudresourcemanager.googleapis.com"
-	"serviceusage.googleapis.com"
-	"compute.googleapis.com"
-	"servicenetworking.googleapis.com"
-)
-for API in "${REQUIRED_APIS[@]}"; do
-	echo "  * Enabling ${API}..."
-	COMMAND_OUTPUT=$(gcloud --quiet services enable "${API}" --project "${GCP_PROJECT_ID}" 2>&1)
-done
-
-SA_FULL_NAME="${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
-
-# pipeline service account
-SERVICE_ACCOUNT_CHECK=$(gcloud iam service-accounts list --project "${GCP_PROJECT_ID}" --filter "email=${SA_FULL_NAME}" --format "value(disabled)" 2>/dev/null)
-if [ "${SERVICE_ACCOUNT_CHECK:-notset}" = "notset" ]; then # account does not exist
-	echo "Creating service account ${SA_FULL_NAME}..." | fold -s -w 80
-	COMMAND_OUTPUT=$(gcloud iam service-accounts create "${SA_NAME}" \
-		--display-name "Service account used in IaC pipelines" \
-		--project "${GCP_PROJECT_ID}" 2>&1)
-elif [ "${SERVICE_ACCOUNT_CHECK}" = "True" ]; then
-	log_error "Service account '${SA_FULL_NAME}' exists but seems to be disabled! Ensure that the service account is enabled."
-	reset_command_output_trap
-	exit 1
-elif [ "${SERVICE_ACCOUNT_CHECK}" = "False" ]; then
-	echo "${TEXT_COLOR_YELLOW}Service account '${SA_NAME}' already exists. Skipping creation.${TEXT_ALL_OFF}" | fold -s -w 80
-else # whatever may happen else...
-	log_error "Encountered an unknown error while checking the service account '${SA_FULL_NAME}'!"
-	reset_command_output_trap
-	exit 1
-fi
-
-REQUIRED_ROLES=(
-	"roles/compute.networkAdmin"
-	"roles/compute.securityAdmin"
-	"roles/storage.admin"
-	"roles/storage.objectAdmin"
-	"roles/iam.serviceAccountAdmin"
-	"roles/iam.securityAdmin"
-	"roles/iam.roleAdmin"
-	"roles/serviceusage.serviceUsageAdmin"
-)
-echo "Binding roles to service account '${SA_FULL_NAME}'..." | fold -s -w 80
-for ROLE in "${REQUIRED_ROLES[@]}"; do
-	echo "  * Binding ${ROLE}..."
-	COMMAND_OUTPUT=$(gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
-		--member="serviceAccount:${SA_FULL_NAME}" \
-		--role="${ROLE}" 2>&1)
-done
-
-# Creating the service networking service account and granting the needed service agent role
-# to avoid issues. Sometimes this permissions are missing, leading to a very hard to track down
-# error for users when running terraform.
-echo "Ensuring Service Networking service account exists with permissions..."
-COMMAND_OUTPUT=$(gcloud beta services identity create \
-	--service=servicenetworking.googleapis.com \
-	--project "${GCP_PROJECT_ID}" 2>&1)
-
-COMMAND_OUTPUT=$(gcloud projects add-iam-policy-binding "${GCP_PROJECT_ID}" \
-	--member="serviceAccount:service-${GCP_PROJECT_NUMBER}@service-networking.iam.gserviceaccount.com" \
-	--role="roles/servicenetworking.serviceAgent" 2>&1)
-
-echo "Ensuring manager group can impersonate the service account..."
-COMMAND_OUTPUT=$(gcloud iam service-accounts add-iam-policy-binding "${SA_FULL_NAME}" \
-	--member="${IAM_MANAGER_GROUP}" --role="roles/iam.serviceAccountTokenCreator" \
-	--project "${GCP_PROJECT_ID}" 2>&1)
-
-# reset command output trap to avoid confusing error if gsutil fails with some error
-reset_command_output_trap
-
-echo "Waiting for GCP to pick up recent IAM changes..."
-IAM_TEST_BUCKET_NAME="cf-bootstrap-$(date | openssl dgst -sha1 -binary | xxd -p)"
-until GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${IAM_TEST_BUCKET_NAME}") 2>&1); do
-	if [[ $GSUTIL_OUTPUT != *"AccessDeniedException: 403 $SA_FULL_NAME does not have storage.buckets.create access to the Google Cloud project."* ]]; then
-		if [[ $GSUTIL_OUTPUT != *"AccessDeniedException: Service account impersonation failed. Please go to the Google Cloud Platform Console (https://cloud.google.com/console), select IAM & admin, then Service Accounts, and grant your originating account the Service Account Token Creator role on the target service account."* ]]; then
-			gsutil_err_handling "$GSUTIL_OUTPUT"
-		fi
-	else
-		echo "  * IAM permissions not propagated yet. Waiting another 5 seconds..."
-		sleep 5
-	fi
-done
-
-echo "Permissions propagated, cleaning up GCS test resource..."
-until GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" rb "gs://${IAM_TEST_BUCKET_NAME}") 2>&1); do
-	if [[ $GSUTIL_OUTPUT != *"Reemoving gs://${IAM_TEST_BUCKET_NAME}/..."* ]]; then
-		gsutil_err_handling "$GSUTIL_OUTPUT"
-	else
-		echo "  * Still cleaning up. Waiting another 5 seconds..."
-		sleep 5
-	fi
-done
-
-if GSUTIL_OUTPUT=$( (gsutil -i "${SA_FULL_NAME}" -q ls "gs://${GCS_BUCKET}") 2>&1); then
-	if [[ $GSUTIL_OUTPUT != *"gs://${GCS_BUCKET}/"* ]]; then
-		cat <<-END_OF_ERROR
-			${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}
-			Please review the command output and fix the root cause:
-			==============================================
-			$GSUTIL_OUTPUT
-			==============================================
-
-		END_OF_ERROR
-		echo "There might be some problems with GCS bucket operations command"
-		echo "Proceeding might has no sense in case terraform state GCS bucket will not be created"
-		echo "You still can proceed, if bucket will not be created later script will exit it's execution"
-		echo "Please use the command output from above for reference in order to solve the problem."
-		read -p "Proceed (y/n)? " -n 1 -r
+else
+	if [ "$(ls -A "${OUTPUT_DIR}")" ]; then
+		read -p "$(echo "Output directory '${OUTPUT_DIR}' is not empty. Continue anyway (y/n)? " | fold -s -w 80)" -n 1 -r
 		echo
 		if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 			log_error "Aborted."
 			exit 1
 		fi
 	fi
-	echo "${TEXT_COLOR_YELLOW}GCS bucket ${GCS_BUCKET} already exists. Skipping creation.${TEXT_ALL_OFF}" | fold -s -w 80
-else
-	echo "Creating GCS bucket for Terraform state..."
-	if ! gsutil -i "${SA_FULL_NAME}" mb -c standard -b on -l EU -p "${GCP_PROJECT_ID}" "gs://${GCS_BUCKET}"; then
-		log_error "Error occured during GCS bucket creation ... can't proceed"
-		exit 1
-	fi
-fi
-set_command_output_trap
-
-# Create IaC code from template
-TEMPLATE_BASEDIR=$(dirname "${BASH_SOURCE[0]}")
-TEMPLATE_DIR="${TEMPLATE_BASEDIR}/templates/"
-
-if [ "${NO_CODE_GEN:-notset}" = 'true' ]; then
-	echo "${TEXT_COLOR_MAGENTA}${TEXT_BOLD}Not generating any Terraform code. Stopping the bootstrap process...${TEXT_ALL_OFF}"
-	reset_command_output_trap
-	exit
 fi
 
-# export variables to make them accessible for envsubst
-export GCP_PROJECT_ID
-export GCS_BUCKET
-export SA_FULL_NAME
-export SA_SHORT_NAME="${SA_NAME}"
-export MANAGER_GROUP
-export DEVELOPER_GROUP
-export GITHUB_REPOSITORY_SA_BLOCK_STRING
-export GITHUB_REPOSITORY_IAM_ROLE_STRING
+echo "Starting first stage terraform init." | fold -s -w 80
 
-echo "Generating Terraform code..."
-while IFS= read -r -d '' SOURCE_FILE; do
-	TARGET_FILE_BASE=$(basename "${SOURCE_FILE}" .in)
-	TARGET_FILE="${OUTPUT_DIR}/${TARGET_FILE_BASE}"
-	envsubst <"$SOURCE_FILE" >"$TARGET_FILE"
-done < <(find "${TEMPLATE_DIR}" -name '*.in' -print0)
+terraform -chdir=terraform init
 
-echo "Ensuring generated files are correctly formatted..."
-COMMAND_OUTPUT=$(cd "${OUTPUT_DIR}" && terraform fmt -recursive 2>&1)
+echo "Starting first stage terraform apply." | fold -s -w 80
 
-cat <<-END_OF_DOC
-	${TEXT_COLOR_MAGENTA}
-	$(echo "The generated Terraform code files are now located inside '${OUTPUT_DIR}'. Please review them now!" | fold -s -w 80)
+terraform -chdir=terraform apply -auto-approve \
+	-var="project=${GCP_PROJECT_ID}" \
+	-var="manager_group=${MANAGER_GROUP}" \
+	-var="developer_group=${DEVELOPER_GROUP}" \
+	-var="terraform_sa_name=${SA_NAME}" \
+	-var="terraform_state_bucket=${GCS_BUCKET}" \
+	-var="github_repository_iam_role_string=${GITHUB_REPOSITORY_IAM_ROLE_STRING}" \
+	-var="github_repository_sa_block_string=${GITHUB_REPOSITORY_SA_BLOCK_STRING}" \
+	-var="time_sleep=${TIME_SLEEP}" \
+	-var="output_dir=${OUTPUT_DIR}"
 
-	${TEXT_BOLD}Please check the generated code carefully, expecially if you bootstrap an
-	already used project. It may need adjustments to reflect your already existing
-	configuration.${TEXT_ALL_OFF}
+echo "Finished first stage terraform apply." | fold -s -w 80
 
-	Once you reviewed the generated Infrastructure as Code configuration, the
-	script can automatically import the resources that were generated during the
-	bootstrapping into the Terraform state. This includes the following resouces:
-	  * The service account that was created to roll out Terraform code changes
-	  * The Google Cloud Storage bucket that was created to store your remote state
+echo "Starting second stage terraform init with state migration using generated code." | fold -s -w 80
 
-	You can also cancel the import if you use a non-standard bootstrap process.
-	However, ${TEXT_BOLD}depending on your project setup this can lead to errors when trying to
-	apply the Terraform code. Thus, using the automatic import is recommended,
-	especially if you are working with a brand new project.${TEXT_ALL_OFF}
+terraform -chdir="${OUTPUT_DIR}" init -migrate-state
 
-END_OF_DOC
-read -p "Proceed with import (y/n)? " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-	cat <<-END_OF_DOC
+echo "Finished second stage terraform init with state migration using generated code." | fold -s -w 80
 
-		${TEXT_BOLD}Caution:${TEXT_ALL_OFF} You may need to import the resources manually into your state:
-		${TEXT_COLOR_MAGENTA}
-		terraform import \\
-		  'module.project-cfg.google_service_account.service_accounts["${SA_NAME}"]' \\
-		  'projects/${GCP_PROJECT_ID}/serviceAccounts/${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com'
-		terraform import \\
-		  'module.tf-state-bucket.google_storage_bucket.bucket' \\
-		  '${GCP_PROJECT_ID}/${GCS_BUCKET}'${TEXT_ALL_OFF}
+echo "Starting second stage terraform apply using generated code." | fold -s -w 80
 
-		After the import, you can run 'terraform plan' and 'terraform apply' as usual.
-	END_OF_DOC
-	reset_command_output_trap
-	exit
-else
-	OLD_PWD="${PWD}"
-	cd "${OUTPUT_DIR}"
+terraform -chdir="${OUTPUT_DIR}" apply -auto-approve
 
-	echo "Initializing output directory..."
-	COMMAND_OUTPUT=$(terraform init -upgrade 2>&1)
+echo "Finished second stage terraform apply using generated code." | fold -s -w 80
 
-	echo "Ensuring token for impersonation is ready..."
-	COMMAND_OUTPUT=$(terraform apply -target data.google_service_account_access_token.iac_sa_token 2>&1)
+echo "Your project bootstrapping is completed! Copy the contents of ${OUTPUT_DIR} into a Git repository (if it isn't already part of one) and commit them. See https://confluence.metrosystems.net/x/XJKtG for more information about Infrastructure as Code (e.g. how to automate its rollout using GitHub Workflows)." | fold -s -w 80
 
-	# reset command output buffer to avoid confusing error if state check fails...
-	clear_command_output_buffer
-	if terraform state list | grep -F -q "module.project-cfg.google_service_account.service_accounts[\"${SA_NAME}\"]"; then
-		echo "${TEXT_COLOR_YELLOW}Service account already exists in state. Skipping import.${TEXT_ALL_OFF}" | fold -s -w 80
-	else
-		echo "Importing service account into state..."
-		COMMAND_OUTPUT=$(terraform import "module.project-cfg.google_service_account.service_accounts[\"${SA_NAME}\"]" "projects/${GCP_PROJECT_ID}/serviceAccounts/${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com" 2>&1)
-	fi
-
-	# reset command output buffer to avoid confusing error if state check fails...
-	clear_command_output_buffer
-	if terraform state list | grep -F -q 'module.tf-state-bucket.google_storage_bucket.bucket'; then
-		echo "${TEXT_COLOR_YELLOW}GCS bucket already exists in state. Skipping import.${TEXT_ALL_OFF}"
-	else
-		echo "Importing GCS bucket into state..."
-		COMMAND_OUTPUT=$(terraform import 'module.tf-state-bucket.google_storage_bucket.bucket' "${GCP_PROJECT_ID}/${GCS_BUCKET}" 2>&1)
-	fi
-
-	# Build roles only plan
-	echo "Building a plan to roll out all IAM changes..."
-	COMMAND_OUTPUT=$(rm -f bootstrap.tfplan && terraform plan -target module.project-cfg.google_project_iam_binding.roles -out bootstrap.tfplan 2>&1)
-	reset_command_output_trap
-	TF_PLAN=$(terraform show bootstrap.tfplan)
-	cat <<-END_OF_DOC
-
-		The script has done all the initial bootstrapping to execute Terraform for the
-		first time! To avoid and problems based on missing permissions, we will roll out
-		the needed IAM permissions only:
-
-		---
-		${TF_PLAN}
-		---
-
-		${TEXT_BOLD}${TEXT_COLOR_MAGENTA}Please check the above plan carefully, expecially if you are bootstrapping a
-		project that was already used previously (e.g. it already contains IAM policy
-		bindings). The Terraform code may remove IAM permissions.
-
-		If you are using afresh (newly created project) it is most likely safe to accept
-		the changes.${TEXT_ALL_OFF}
-
-	END_OF_DOC
-	read -p "Execute 'terraform apply' for plan above (y/n)? " -n 1 -r
-	echo
-	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-		echo "Exiting bootstrap without executing 'terraform apply' for the first time. Your project is now bootstrapped but may still miss resources that are defined in the generated Terraform code. Execute 'terraform apply' from within ${OUTPUT_DIR} to roll the missing resources." | fold -s -w 80
-		rm "bootstrap.tfplan"
-	else
-		echo "Applying the Terraform changes..."
-		terraform apply -auto-approve bootstrap.tfplan
-		rm "bootstrap.tfplan"
-	fi
-
-	set_command_output_trap
-	echo "Building an initial full rollout plan..."
-	COMMAND_OUTPUT=$(rm -f bootstrap.tfplan && terraform plan -out bootstrap.tfplan 2>&1)
-	reset_command_output_trap
-	TF_PLAN=$(terraform show bootstrap.tfplan)
-	cat <<-END_OF_DOC
-
-		The script has done all needed steps to execute Terraform for the first time
-		managing your complete project resources! Depending on your configuration,
-		the module will create several additional resources (e.g. IAM bindings)
-		during the first run:
-
-		---
-		${TF_PLAN}
-		---
-
-		${TEXT_BOLD}${TEXT_COLOR_MAGENTA}Please check the above plan carefully, expecially if you are bootstrapping a
-		project that was already used previously (e.g. it already contains IAM policy
-		bindings). The Terraform code may removes IAM permissions.
-
-		If you are using afresh (newly created project) it is most likely safe to accept
-		the changes.${TEXT_ALL_OFF}
-
-	END_OF_DOC
-
-	read -p "Execute 'terraform apply' for plan above (y/n)? " -n 1 -r
-	echo
-	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-		echo "Exiting bootstrap without executing 'terraform apply' with full apply. Your project is now bootstrapped but may still miss resources that are defined in the generated Terraform code. Execute 'terraform apply' from within ${OUTPUT_DIR} to roll the missing resources." | fold -s -w 80
-		rm "bootstrap.tfplan"
-	else
-		echo "Applying the Terraform changes..."
-		terraform apply -auto-approve bootstrap.tfplan
-		rm "bootstrap.tfplan"
-	fi
-	cd "${OLD_PWD}"
-	echo
-	echo "Your project bootstrapping is completed! Copy the contents of ${OUTPUT_DIR} into a Git repository (if it isn't already part of one) and commit them. See https://confluence.metrosystems.net/x/XJKtG for more information about Infrastructure as Code (e.g. how to automate its rollout using GitHub Workflows)." | fold -s -w 80
-fi
+echo "On consecutive executions you will see roles being added and then removed to the manager group between the first and second stages. THIS IS NORMAL. DON'T PANIC." | fold -s -w 80
