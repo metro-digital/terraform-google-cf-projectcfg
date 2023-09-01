@@ -40,7 +40,7 @@ module "project-cfg" {
         ]
       }
       project_roles = [
-          "${GITHUB_REPOSITORY_IAM_ROLE_STRING}",
+          ${GITHUB_REPOSITORY_IAM_ROLE_STRING}
           "roles/compute.networkAdmin",
           "roles/vpcaccess.admin",
           "roles/compute.securityAdmin",
