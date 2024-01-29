@@ -1,4 +1,4 @@
-resource "google_project_service" "essential-contacts" {
+resource "google_project_service" "essential_contacts" {
   project = data.google_project.project.project_id
   count   = length(var.essential_contacts) > 0 ? 1 : 0
   service = "essentialcontacts.googleapis.com"
@@ -19,7 +19,7 @@ resource "google_essential_contacts_contact" "contact" {
   notification_category_subscriptions = each.value.categories
 
   depends_on = [
-    google_project_service.essential-contacts,
+    google_project_service.essential_contacts,
     google_project_iam_binding.roles
   ]
 }

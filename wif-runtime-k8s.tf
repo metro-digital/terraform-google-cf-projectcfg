@@ -18,7 +18,7 @@ locals {
   ]))
 }
 
-resource "google_iam_workload_identity_pool" "runtime-k8s" {
+resource "google_iam_workload_identity_pool" "runtime_k8s" {
   provider = google
   for_each = local.wif_runtime_k8s_clusters
   project  = data.google_project.project.project_id
@@ -33,12 +33,12 @@ resource "google_iam_workload_identity_pool" "runtime-k8s" {
   ]
 }
 
-resource "google_iam_workload_identity_pool_provider" "runtime-k8s-cluster" {
+resource "google_iam_workload_identity_pool_provider" "runtime_k8s_cluster" {
   provider = google
   for_each = local.wif_runtime_k8s_clusters
   project  = data.google_project.project.project_id
 
-  workload_identity_pool_id          = google_iam_workload_identity_pool.runtime-k8s[each.key].workload_identity_pool_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.runtime_k8s[each.key].workload_identity_pool_id
   workload_identity_pool_provider_id = "kubernetes"
   display_name                       = "Kubernetes"
   description                        = "OIDC Identity Pool Provider for Cloud Native Runtime Kubernetes cluster '${each.key}'"
@@ -57,6 +57,6 @@ resource "google_iam_workload_identity_pool_provider" "runtime-k8s-cluster" {
   }
 
   depends_on = [
-    google_iam_workload_identity_pool.runtime-k8s
+    google_iam_workload_identity_pool.runtime_k8s
   ]
 }

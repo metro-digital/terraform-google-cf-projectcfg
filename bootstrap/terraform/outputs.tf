@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2023-2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  project_id          = "${GCP_PROJECT_ID}"
-  manager_group       = "${MANAGER_GROUP}"
-  developer_group     = "${DEVELOPER_GROUP}"
-  iac_service_account = "${SA_FULL_NAME}"
-
-  # IAM ready strings (with prefix like group, serviceAccount, ...)
-  iam_manager_group       = "group:${local.manager_group}"
-  iam_developer_group     = "group:${local.developer_group}"
-  iam_iac_service_account = "serviceAccount:${local.iac_service_account}"
-}
+# outputs.tf file is empty as no outputs are used
+# Reference: https://github.com/terraform-linters/tflint-ruleset-terraform/blob/v0.5.0/docs/rules/terraform_standard_module_structure.md

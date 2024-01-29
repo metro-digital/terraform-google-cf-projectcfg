@@ -188,7 +188,7 @@ resource "google_vpc_access_connector" "default" {
   ]
 }
 
-resource "google_compute_subnetwork" "proxy-only" {
+resource "google_compute_subnetwork" "proxy_only" {
   provider = google
   for_each = var.skip_default_vpc_creation ? {} : {
     for r in keys(var.vpc_regions) : r => {

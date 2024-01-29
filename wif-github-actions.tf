@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_iam_workload_identity_pool" "github-actions" {
+resource "google_iam_workload_identity_pool" "github_actions" {
   provider = google
   count    = local.github_actions_enabled
   project  = data.google_project.project.project_id
 
-  workload_identity_pool_id = "github-actions"
+  workload_identity_pool_id = "github_actions"
   display_name              = "Github actions"
   description               = "Identity pool github actions pipelines"
 
@@ -32,7 +32,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   count    = local.github_actions_enabled
   project  = data.google_project.project.project_id
 
-  workload_identity_pool_id          = google_iam_workload_identity_pool.github-actions[0].workload_identity_pool_id
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github_actions[0].workload_identity_pool_id
   workload_identity_pool_provider_id = "github"
   display_name                       = "GitHub"
   description                        = "OIDC Identity Pool Provider for GitHub Actions pipelines"
@@ -44,6 +44,6 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   }
 
   depends_on = [
-    google_iam_workload_identity_pool.github-actions
+    google_iam_workload_identity_pool.github_actions
   ]
 }
