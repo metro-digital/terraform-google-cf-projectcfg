@@ -107,7 +107,7 @@ And second stage execution:
 ```sh
     (output stripped)
 
-      # module.project-cfg.google_project_iam_binding.roles["roles/iam.serviceAccountAdmin"] will be updated in-place
+      # module.projectcfg.google_project_iam_binding.roles["roles/iam.serviceAccountAdmin"] will be updated in-place
       ~ resource "google_project_iam_binding" "roles" {
             id      = "cf-metrocf-bartek-test-1-18/roles/iam.serviceAccountAdmin"
           ~ members = [
@@ -117,7 +117,7 @@ And second stage execution:
             # (3 unchanged attributes hidden)
         }
 
-      # module.project-cfg.google_project_iam_binding.roles["roles/serviceusage.serviceUsageAdmin"] will be updated in-place
+      # module.projectcfg.google_project_iam_binding.roles["roles/serviceusage.serviceUsageAdmin"] will be updated in-place
       ~ resource "google_project_iam_binding" "roles" {
             id      = "cf-metrocf-bartek-test-1-18/roles/serviceusage.serviceUsageAdmin"
           ~ members = [
@@ -127,7 +127,7 @@ And second stage execution:
             # (3 unchanged attributes hidden)
         }
 
-      # module.project-cfg.google_project_iam_binding.roles["roles/storage.admin"] will be updated in-place
+      # module.projectcfg.google_project_iam_binding.roles["roles/storage.admin"] will be updated in-place
       ~ resource "google_project_iam_binding" "roles" {
             id      = "cf-metrocf-bartek-test-1-18/roles/storage.admin"
           ~ members = [

@@ -28,7 +28,7 @@
 You can grant project level permissions to a service account using the `roles` input
 
 ```hcl
-module "project-cfg" {
+module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
 
@@ -73,7 +73,7 @@ can only impersonate specific service accounts. Granting it on project level
 will allow the member to impersonate all service accounts within the project!
 
 ```hcl
-module "project-cfg" {
+module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
 
@@ -108,7 +108,7 @@ In the following example, the service account `bq` inside the Kubernetes
 namespace `default` is mapped to the IAM service account `bq-reader`.
 
 ```hcl
-module "project-cfg" {
+module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
 
@@ -176,7 +176,7 @@ the the use of a service account within a GitHub workflow run, you need to set t
 account:
 
 ```hcl
-module "project-cfg" {
+module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
 
@@ -258,8 +258,8 @@ This usually happens if you created the pool via terraform and destroyed it agai
 After you restored your pool and provider, you need to import them into your terraform state:
 ```shell
 export GCP_PROJECT_ID="<YOUR GOOGLE PROJECT ID>"
-terraform import 'module.project-cfg.google_iam_workload_identity_pool.github-actions[0]' $GCP_PROJECT_ID/github-actions
-terraform import 'module.project-cfg.google_iam_workload_identity_pool_provider.github[0]' $GCP_PROJECT_ID/github-actions/github
+terraform import 'module.projectcfg.google_iam_workload_identity_pool.github-actions[0]' $GCP_PROJECT_ID/github-actions
+terraform import 'module.projectcfg.google_iam_workload_identity_pool_provider.github[0]' $GCP_PROJECT_ID/github-actions/github
 ```
 
 ## Cloud Native Runtime Kubernetes Clusters
@@ -271,7 +271,7 @@ your Cloud Foundation project, you need to set up a Workload Identity Pool and a
 This is done by this module automatically, if you configure a Service Account to be used from a Runtime kubernetes cluster:
 
 ```hcl
-module "project-cfg" {
+module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = "metro-cf-example-ex1-e8v"
 

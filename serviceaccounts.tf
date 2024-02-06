@@ -92,7 +92,7 @@ data "google_iam_policy" "service_accounts" {
       each.value.github_action_repositories != null ? [
         for repo in each.value.github_action_repositories : format(
           "principalSet://iam.googleapis.com/%s/attribute.repository/%s",
-          google_iam_workload_identity_pool.github-actions[0].name,
+          google_iam_workload_identity_pool.github_actions[0].name,
           repo
         )
       ] : [],
@@ -100,7 +100,7 @@ data "google_iam_policy" "service_accounts" {
       each.value.runtime_service_accounts != null ? [
         for runtime_sa in each.value.runtime_service_accounts : format(
           "principal://iam.googleapis.com/%s/subject/system:serviceaccount:%s:%s",
-          google_iam_workload_identity_pool.runtime-k8s[runtime_sa.cluster_id].name,
+          google_iam_workload_identity_pool.runtime_k8s[runtime_sa.cluster_id].name,
           runtime_sa.namespace,
           runtime_sa.service_account
         )
@@ -138,17 +138,17 @@ resource "google_service_account_iam_policy" "service_accounts" {
 # servicenetworking.googleapis.com is always enabled by this module
 # but sometimes this permission is not set on the needed service account.
 # This resource makes sure it's always there.
-resource "google_project_service_identity" "servicenetworking-service-account" {
+resource "google_project_service_identity" "servicenetworking_service_account" {
   provider = google-beta
 
   project = data.google_project.project.project_id
   service = "servicenetworking.googleapis.com"
 }
 
-resource "google_project_iam_member" "servicenetworking-service-account-binding" {
+resource "google_project_iam_member" "servicenetworking_service_account_binding" {
   project = data.google_project.project.project_id
   role    = "roles/servicenetworking.serviceAgent"
-  member  = "serviceAccount:${google_project_service_identity.servicenetworking-service-account.email}"
+  member  = "serviceAccount:${google_project_service_identity.servicenetworking_service_account.email}"
 
   depends_on = [
     google_project_service.project

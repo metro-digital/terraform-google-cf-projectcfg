@@ -18,7 +18,7 @@ output "project_id" {
 
   depends_on = [
     # external data sources
-    data.external.active-roles,
+    data.external.active_roles,
     data.external.metro_netblocks,
     data.external.sa_non_authoritative_role_members,
     # iam project roles

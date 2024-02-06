@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,6 +27,21 @@ resource "local_file" "provider_tf" {
     SA_FULL_NAME = google_service_account.this.email
   })
   filename = "../${var.output_dir}/provider.tf"
+}
+
+resource "local_file" "versions_tf" {
+  content  = templatefile("templates/versions.tf.in", {})
+  filename = "../${var.output_dir}/versions.tf"
+}
+
+resource "local_file" "variables_tf" {
+  content  = templatefile("templates/variables.tf.in", {})
+  filename = "../${var.output_dir}/variables.tf"
+}
+
+resource "local_file" "outputs_tf" {
+  content  = templatefile("templates/outputs.tf.in", {})
+  filename = "../${var.output_dir}/outputs.tf"
 }
 
 resource "local_file" "tf_state_bucket_tf" {

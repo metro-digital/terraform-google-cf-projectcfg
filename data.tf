@@ -19,7 +19,7 @@ data "google_project" "project" {
 }
 
 # Fetch needed CIDR blocks from google for firewall rules and similar
-data "google_netblock_ip_ranges" "iap-forwarders" {
+data "google_netblock_ip_ranges" "iap_forwarders" {
   provider   = google
   range_type = "iap-forwarders"
 }
@@ -40,7 +40,7 @@ data "google_client_config" "current" {
 }
 
 # active IAM roles
-data "external" "active-roles" {
+data "external" "active_roles" {
   program = ["bash", "${path.module}/get-active-roles-project-iam.sh"]
   query = {
     project_id   = data.google_project.project.project_id
@@ -64,7 +64,7 @@ locals {
   ))
 
   # Split the list of active roles from the external data source
-  active_roles_splitted = split(",", data.external.active-roles.result.roles)
+  active_roles_splitted = split(",", data.external.active_roles.result.roles)
   # exclude all project or org level custom roles
   active_roles_no_custom = [for role in local.active_roles_splitted : role if can(regex("^roles/", role))]
   # get a list of active roles we need to exclude (assigned to service accounts automatically and similar)

@@ -4,11 +4,11 @@
 # This file can be deleted after initial Terraform import is done.
 
 import {
-  to = module.project-cfg.google_service_account.service_accounts["${SA_SHORT_NAME}"]
+  to = module.projectcfg.google_service_account.service_accounts["${SA_SHORT_NAME}"]
   id = "projects/${PROJECT}/serviceAccounts/${SA_FULL_NAME}"
 }
 
 import {
-  to = module.tf-state-bucket.google_storage_bucket.bucket
+  to = module.tf_state_bucket.google_storage_bucket.bucket
   id = "${PROJECT}/${GCS_BUCKET}"
 }

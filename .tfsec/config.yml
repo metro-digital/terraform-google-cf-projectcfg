@@ -2,3 +2,4 @@
 exclude:
   - google-compute-enable-vpc-flow-logs
   - google-compute-no-public-ingress
+  - google-storage-bucket-encryption-customer-key

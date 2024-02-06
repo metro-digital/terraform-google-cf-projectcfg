@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resource "google_compute_firewall" "allow-all-internal" {
+resource "google_compute_firewall" "allow_all_internal" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -28,7 +28,7 @@ resource "google_compute_firewall" "allow-all-internal" {
   source_ranges = local.default_vpc_active_ranges
 }
 
-resource "google_compute_firewall" "allow-icmp-metro-public" {
+resource "google_compute_firewall" "allow_icmp_metro_public" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -48,7 +48,7 @@ resource "google_compute_firewall" "allow-icmp-metro-public" {
   source_ranges = local.metro_netblocks.ipv4
 }
 
-resource "google_compute_firewall" "allow-http-metro-public" {
+resource "google_compute_firewall" "allow_http_metro_public" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -69,7 +69,7 @@ resource "google_compute_firewall" "allow-http-metro-public" {
   source_ranges = local.metro_netblocks.ipv4
 }
 
-resource "google_compute_firewall" "allow-https-metro-public" {
+resource "google_compute_firewall" "allow_https_metro_public" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -90,7 +90,7 @@ resource "google_compute_firewall" "allow-https-metro-public" {
   source_ranges = local.metro_netblocks.ipv4
 }
 
-resource "google_compute_firewall" "allow-ssh-metro-public" {
+resource "google_compute_firewall" "allow_ssh_metro_public" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -111,7 +111,7 @@ resource "google_compute_firewall" "allow-ssh-metro-public" {
   source_ranges = local.metro_netblocks.ipv4
 }
 
-resource "google_compute_firewall" "allow-ssh-iap" {
+resource "google_compute_firewall" "allow_ssh_iap" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -129,10 +129,10 @@ resource "google_compute_firewall" "allow-ssh-iap" {
     "fw-allow-ssh-iap",
   ]
 
-  source_ranges = data.google_netblock_ip_ranges.iap-forwarders.cidr_blocks
+  source_ranges = data.google_netblock_ip_ranges.iap_forwarders.cidr_blocks
 }
 
-resource "google_compute_firewall" "allow-all-iap" {
+resource "google_compute_firewall" "allow_all_iap" {
   provider = google
   count    = var.skip_default_vpc_creation ? 0 : 1
 
@@ -149,5 +149,5 @@ resource "google_compute_firewall" "allow-all-iap" {
     "fw-allow-all-iap",
   ]
 
-  source_ranges = data.google_netblock_ip_ranges.iap-forwarders.cidr_blocks
+  source_ranges = data.google_netblock_ip_ranges.iap_forwarders.cidr_blocks
 }
