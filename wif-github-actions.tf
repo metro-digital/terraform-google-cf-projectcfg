@@ -17,7 +17,7 @@ resource "google_iam_workload_identity_pool" "github_actions" {
   count    = local.github_actions_enabled
   project  = data.google_project.project.project_id
 
-  workload_identity_pool_id = "github_actions"
+  workload_identity_pool_id = "github-actions"
   display_name              = "Github actions"
   description               = "Identity pool github actions pipelines"
 
