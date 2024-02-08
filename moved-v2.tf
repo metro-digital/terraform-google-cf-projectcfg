@@ -3,81 +3,81 @@
 # will be removed in v3 module version
 
 moved {
-  from = iap-forwarders
-  to   = iap_forwarders
+  from = google_netblock_ip_ranges.iap-forwarders
+  to   = google_netblock_ip_ranges.iap_forwarders
 }
 
 moved {
-  from = active-roles
-  to   = active_roles
+  from = external.active-roles
+  to   = external.active_roles
 }
 
 moved {
-  from = essential-contacts
-  to   = essential_contacts
+  from = google_project_service.essential-contacts
+  to   = google_project_service.essential_contacts
 }
 
 moved {
-  from = allow-all-internal
-  to   = allow_all_internal
+  from = google_compute_firewall.allow-all-internal
+  to   = google_compute_firewall.allow_all_internal
 }
 
 moved {
-  from = allow-icmp-metro-public
-  to   = allow_icmp_metro_public
+  from = google_compute_firewall.allow-icmp-metro-public
+  to   = google_compute_firewall.allow_icmp_metro_public
 }
 
 moved {
-  from = allow-http-metro-public
-  to   = allow_http_metro_public
+  from = google_compute_firewall.allow-http-metro-public
+  to   = google_compute_firewall.allow_http_metro_public
 }
 
 moved {
-  from = allow-https-metro-public
-  to   = allow_https_metro_public
+  from = google_compute_firewall.allow-https-metro-public
+  to   = google_compute_firewall.allow_https_metro_public
 }
 
 moved {
-  from = allow-ssh-metro-public
-  to   = allow_ssh_metro_public
+  from = google_compute_firewall.allow-ssh-metro-public
+  to   = google_compute_firewall.allow_ssh_metro_public
 }
 
 moved {
-  from = allow-ssh-iap
-  to   = allow_ssh_iap
+  from = google_compute_firewall.allow-ssh-iap
+  to   = google_compute_firewall.allow_ssh_iap
 }
 
 moved {
-  from = allow-all-iap
-  to   = allow_all_iap
+  from = google_compute_firewall.allow-all-iap
+  to   = google_compute_firewall.allow_all_iap
 }
 
 moved {
-  from = proxy-only
-  to   = proxy_only
+  from = google_compute_subnetwork.proxy-only
+  to   = google_compute_subnetwork.proxy_only
 }
 
 moved {
-  from = github-actions
-  to   = github_actions
+  from = google_iam_workload_identity_pool.github-actions
+  to   = google_iam_workload_identity_pool.github_actions
 }
 
 moved {
-  from = runtime-k8s
-  to   = runtime_k8s
+  from = google_iam_workload_identity_pool.runtime-k8s
+  to   = google_iam_workload_identity_pool.runtime_k8s
 }
 
 moved {
-  from = runtime-k8s-cluster
-  to   = runtime_k8s_cluster
+  from = google_iam_workload_identity_pool_provider.runtime-k8s-cluster
+  to   = google_iam_workload_identity_pool_provider.runtime_k8s_cluster
 }
 
 moved {
-  from = servicenetworking-service-account
-  to   = servicenetworking_service_account
+  from = google_project_service_identity.servicenetworking-service-account
+  to   = google_project_service_identity.servicenetworking_service_account
 }
 
 moved {
-  from = servicenetworking-service-account-binding
-  to   = servicenetworking_service_account_binding
+  from = google_project_iam_member.servicenetworking-service-account-binding
+  to   = google_project_iam_member.servicenetworking_service_account_binding
 }
