@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,11 @@ variable "manager_group" {
 
 variable "developer_group" {
   description = "Name of the developer group to grant the IAM roles to."
+  type        = string
+}
+
+variable "observer_group" {
+  description = "Name of the observer group to grant the IAM roles to."
   type        = string
 }
 
