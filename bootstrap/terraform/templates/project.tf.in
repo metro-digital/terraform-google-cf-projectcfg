@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@
 module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = local.project_id
-  version    = ">=2.1"
+  version    = "~> 2.3"
 
   roles = {
-    "roles/viewer" = [
+    "roles/browser" = [
       local.iam_manager_group,
-      local.iam_developer_group
+      local.iam_developer_group,
+      local.iam_observer_group
     ],
     "roles/cloudsupport.techSupportEditor" = [ local.iam_manager_group ],
   }
@@ -54,6 +55,10 @@ module "projectcfg" {
       ${GITHUB_REPOSITORY_SA_BLOCK_STRING}
     }
   }
+
+  # Ensure there is no roles/editor grant for the Compute Engine default service account
+  # This flag will be removed in version 3 of the module, as it will become default behavior.
+  deprivilege_compute_engine_sa = true
 
   ## List of vpc regions to configure and how to set them up
   ## (default is europe-west1 only without Serverless VPC Access or NAT)

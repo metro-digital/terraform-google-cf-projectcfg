@@ -65,6 +65,7 @@ resource "local_file" "locals_tf" {
     GCP_PROJECT_ID  = var.project,
     MANAGER_GROUP   = var.manager_group,
     DEVELOPER_GROUP = var.developer_group,
+    OBSERVER_GROUP  = var.observer_group,
     SA_FULL_NAME    = google_service_account.this.email
   })
   filename = "../${var.output_dir}/local.tf"

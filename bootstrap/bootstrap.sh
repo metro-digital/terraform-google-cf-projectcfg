@@ -210,10 +210,12 @@ if [ "${IAM_MANAGER_GROUP:-notset}" = "notset" ]; then
 	exit 1
 fi
 IAM_DEVELOPER_GROUP="${IAM_MANAGER_GROUP/-manager@/-developer@}"
+IAM_OBSERVER_GROUP="${IAM_MANAGER_GROUP/-manager@/-observer@}"
 
 # Variables used for output and inside terraform templates
-DEVELOPER_GROUP="${IAM_DEVELOPER_GROUP#group:}"
 MANAGER_GROUP="${IAM_MANAGER_GROUP#group:}"
+DEVELOPER_GROUP="${IAM_DEVELOPER_GROUP#group:}"
+OBSERVER_GROUP="${IAM_OBSERVER_GROUP#group:}"
 
 OUTPUT_HINT=$(echo "The generated Terraform code will be written to '${OUTPUT_DIR}'." | fold -s -w 80)
 
@@ -230,6 +232,7 @@ cat <<-EOF
 	${TEXT_BOLD}Currently active gcloud account:${TEXT_ALL_OFF} ${ACTIVE_GCLOUD_ACCOUNT}
 	${TEXT_BOLD}Detected manager group:${TEXT_ALL_OFF} ${MANAGER_GROUP}
 	${TEXT_BOLD}Detected developer group:${TEXT_ALL_OFF} ${DEVELOPER_GROUP}
+	${TEXT_BOLD}Detected observer group:${TEXT_ALL_OFF} ${OBSERVER_GROUP}
 
 	The following ressources will be created (if they don't already exist):
 	  * ${TEXT_BOLD}Service Account:${TEXT_ALL_OFF}
@@ -314,6 +317,7 @@ terraform -chdir=terraform apply -auto-approve \
 	-var="project=${GCP_PROJECT_ID}" \
 	-var="manager_group=${MANAGER_GROUP}" \
 	-var="developer_group=${DEVELOPER_GROUP}" \
+	-var="observer_group=${OBSERVER_GROUP}" \
 	-var="terraform_sa_name=${SA_NAME}" \
 	-var="terraform_state_bucket=${GCS_BUCKET}" \
 	-var="github_repository_iam_role_string=${GITHUB_REPOSITORY_IAM_ROLE_STRING}" \
