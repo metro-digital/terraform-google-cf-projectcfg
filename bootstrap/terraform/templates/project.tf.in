@@ -50,7 +50,8 @@ module "projectcfg" {
           "roles/iam.serviceAccountAdmin",
           "roles/iam.securityAdmin",
           "roles/iam.roleAdmin",
-          "roles/serviceusage.serviceUsageAdmin"
+          "roles/serviceusage.serviceUsageAdmin",
+          "roles/roles/dns.admin"
       ]
       ${GITHUB_REPOSITORY_SA_BLOCK_STRING}
     }
