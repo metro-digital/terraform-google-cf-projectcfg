@@ -81,8 +81,9 @@ data "google_iam_policy" "service_accounts" {
     iterator = binding
 
     content {
-      role    = binding.value.role
-      members = split(",", data.external.sa_non_authoritative_role_members[binding.key].result.members)
+      role = binding.value.role
+      # if no member exists, we receive an empty string "" - compact removes this
+      members = compact(split(",", data.external.sa_non_authoritative_role_members[binding.key].result.members))
     }
   }
 
