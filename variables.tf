@@ -320,7 +320,7 @@ variable "service_accounts" {
       cluster_id      = string
       namespace       = string
       service_account = string
-    })))
+    })), [])
   }))
 
   default = {}
