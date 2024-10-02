@@ -315,12 +315,12 @@ variable "service_accounts" {
     iam                         = map(list(string))
     project_roles               = optional(list(string))
     iam_non_authoritative_roles = optional(list(string))
-    github_action_repositories  = optional(list(string))
+    github_action_repositories  = optional(list(string), [])
     runtime_service_accounts = optional(list(object({
       cluster_id      = string
       namespace       = string
       service_account = string
-    })))
+    })), [])
   }))
 
   default = {}
@@ -408,4 +408,30 @@ variable "workload_identity_pool_attribute_mapping" {
     "google.subject"       = "assertion.sub"
     "attribute.repository" = "assertion.repository"
   }
+}
+
+variable "workload_identity_pool_attribute_condition" {
+  description = <<-EOD
+    A Common Expression Language (CEL) expression to restrict what otherwise
+    valid authentication credentials issued by the provider should not be
+    accepted.
+
+    By default, credentials issued by GitHub within any organisation/user owning a repository given
+    via `github_action_repositories` property of a any service account are accepted.
+
+    You should never only rely on this condition to limit the principals who
+    can get access to Google Cloud resources but e.g. explicitly limit the
+    repository using the `attribute.repository` attribute of your principal
+    set. This is done automatically if you use the `github_action_repositories`
+    property of a service account managed by this module.
+
+    If the repository of your GitHub workflow runs in a different GitHub
+    organisation, make sure to provide a valid CEL expression which allows
+    workflows from your organisation. A list of all METRO-owned organisations
+    can be obtained from [METRO's GitHub Enterprise](https://github.com/enterprises/metro-digital/organizations).
+  EOD
+
+  type     = string
+  nullable = true
+  default  = null
 }

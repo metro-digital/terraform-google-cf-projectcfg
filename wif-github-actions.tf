@@ -12,13 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  # get all GitHub repository owners into a helper variable
+  workload_identity_pool_repository_owners = distinct(
+    flatten(
+      [for sa, config in var.service_accounts :
+        [for repo in config.github_action_repositories : split("/", repo)[0]]
+      ]
+    )
+  )
+
+  workload_identity_pool_attribute_condition = var.workload_identity_pool_attribute_condition != null ? var.workload_identity_pool_attribute_condition : format(
+    "assertion.repository_owner in %s",
+    jsonencode(local.workload_identity_pool_repository_owners)
+  )
+}
+
 resource "google_iam_workload_identity_pool" "github_actions" {
   provider = google
   count    = local.github_actions_enabled
   project  = data.google_project.project.project_id
 
   workload_identity_pool_id = "github-actions"
-  display_name              = "Github actions"
+  display_name              = "GitHub Actions"
   description               = "Identity pool github actions pipelines"
 
   depends_on = [
@@ -38,6 +54,9 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   description                        = "OIDC Identity Pool Provider for GitHub Actions pipelines"
 
   attribute_mapping = var.workload_identity_pool_attribute_mapping
+  # For certain issuer URLs Google enforces an attribute condition. GitHub is one of those.
+  # See also: https://cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines#conditions
+  attribute_condition = local.workload_identity_pool_attribute_condition
 
   oidc {
     issuer_uri = "https://token.actions.githubusercontent.com"

@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+locals {
+  service_account_valid_github_repo_regex = "^[[:alnum:]-]{1,39}\\/([[:alnum:]\\._-]){1,100}$"
+}
+
 resource "google_service_account" "service_accounts" {
   provider = google
   for_each = var.service_accounts
@@ -20,6 +24,30 @@ resource "google_service_account" "service_accounts" {
   project      = data.google_project.project.project_id
   display_name = each.value.display_name
   description  = each.value.description
+
+  lifecycle {
+    # ensure the given NAT gateway for this subnetwork is configured
+    # this can't be check as condition in the variables, as those can only refer to themselves
+    precondition {
+      condition     = alltrue([for repo in each.value.github_action_repositories : can(regex(local.service_account_valid_github_repo_regex, repo))])
+      error_message = <<-EOE
+        At least one invalid repository given for service account '${each.key}'.
+
+        Invalid repositories:
+          ${indent(2, join("\n", [for repo in each.value.github_action_repositories : "- ${repo}" if !can(regex(local.service_account_valid_github_repo_regex, repo))]))}
+
+        Repositories must meet the following pattern: <username or organization>/<repository name>
+
+        usernames/organizations can
+          - be alpha numerical chars and hyphens
+          - be between 1 and 39 chars long
+
+        repository names can
+          - be alpha numerical chars, hyphens, underscores and periods
+          - be between 1 and 100 chars long
+      EOE
+    }
+  }
 }
 
 locals {
@@ -81,8 +109,9 @@ data "google_iam_policy" "service_accounts" {
     iterator = binding
 
     content {
-      role    = binding.value.role
-      members = split(",", data.external.sa_non_authoritative_role_members[binding.key].result.members)
+      role = binding.value.role
+      # if no member exists, we receive an empty string "" - compact removes this
+      members = compact(split(",", data.external.sa_non_authoritative_role_members[binding.key].result.members))
     }
   }
 
