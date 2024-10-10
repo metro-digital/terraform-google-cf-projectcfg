@@ -187,7 +187,7 @@ if [ "${GCP_PROJECT_ID:-notset}" = "notset" ]; then
 	log_error "Missing GCP_PROJECT_ID! Make sure the '-p' parameter is correctly set." 1>&2
 	exit 1
 else
-	GCP_PROJECT_NAME="$(gcloud projects list --format='value(name)' --filter="'$GCP_PROJECT_ID'")"
+	GCP_PROJECT_NAME="$(gcloud projects describe "${GCP_PROJECT_ID}" --format='value(name)')"
 	if [ "${GCP_PROJECT_NAME}" = "" ]; then
 		log_error "Unable to find a project with the given project ID '${GCP_PROJECT_ID}'!"
 		log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role (or a role with comparable permissions) assigned to this account inside the project?"
@@ -196,7 +196,7 @@ else
 fi
 
 #Getting project number
-GCP_PROJECT_NUMBER="$(gcloud projects list --format='value(project_number)' --filter="'$GCP_PROJECT_ID'")"
+GCP_PROJECT_NUMBER="$(gcloud projects describe "${GCP_PROJECT_ID}" --format='value(project_number)')"
 if [ "${GCP_PROJECT_NUMBER}" = "" ]; then
 	log_error "Unable to determine a project number with the given project ID '${GCP_PROJECT_ID}'!"
 	log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role (or a role with comparable permissions) assigned to this account inside the project?"
