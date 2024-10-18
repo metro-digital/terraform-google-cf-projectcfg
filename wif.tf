@@ -15,12 +15,12 @@
 locals {
   # Check if ANY given service account has a GitHub action repository configured
   github_actions_enabled = length(compact([
-    for sa, config in var.service_accounts : sa if can(length(config.github_action_repositories) > 0)
+    for sa, config in var.service_accounts : sa if length(config.github_action_repositories) > 0
   ])) > 0 ? 1 : 0
 
   # Check if ANY given service account has a Kubernetes Runtime Service Account configured
   runtime_service_accounts_enabled = length(compact([
-    for sa, config in var.service_accounts : sa if can(length(config.runtime_service_accounts) > 0)
+    for sa, config in var.service_accounts : sa if length(config.runtime_service_accounts) > 0
   ])) > 0 ? 1 : 0
 
   # We also need to enable some services to make the Workload Identity Federation setup possible

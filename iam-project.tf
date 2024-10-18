@@ -16,7 +16,7 @@ locals {
   always_add_permissions = {
     "roles/editor" = compact(flatten(
       concat(
-        # always add cloud services, see: https://cloud.google.com/iam/docs/service-accounts#google-managed
+        # always add cloud services, see: https://cloud.google.com/iam/docs/service-account-types#google-apis-service-agent
         [format("serviceAccount:%s@cloudservices.gserviceaccount.com", data.google_project.project.number)],
         var.deprivilege_compute_engine_sa ? [] : [format("serviceAccount:%s-compute@developer.gserviceaccount.com", data.google_project.project.number)]
       )
