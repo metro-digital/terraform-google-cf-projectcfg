@@ -25,6 +25,10 @@ resource "google_compute_firewall" "allow_all_internal" {
     protocol = "all"
   }
 
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+
   source_ranges = local.default_vpc_active_ranges
 }
 
@@ -39,6 +43,10 @@ resource "google_compute_firewall" "allow_icmp_metro_public" {
 
   allow {
     protocol = "icmp"
+  }
+
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
   }
 
   target_tags = [
@@ -62,6 +70,10 @@ resource "google_compute_firewall" "allow_http_metro_public" {
     ports    = [80]
   }
 
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+
   target_tags = [
     "fw-allow-http-metro-public",
   ]
@@ -81,6 +93,10 @@ resource "google_compute_firewall" "allow_https_metro_public" {
   allow {
     protocol = "tcp"
     ports    = [443]
+  }
+
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
   }
 
   target_tags = [
@@ -104,6 +120,10 @@ resource "google_compute_firewall" "allow_ssh_metro_public" {
     ports    = [22]
   }
 
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+
   target_tags = [
     "fw-allow-ssh-metro-public",
   ]
@@ -125,6 +145,10 @@ resource "google_compute_firewall" "allow_ssh_iap" {
     ports    = [22]
   }
 
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+
   target_tags = [
     "fw-allow-ssh-iap",
   ]
@@ -132,22 +156,3 @@ resource "google_compute_firewall" "allow_ssh_iap" {
   source_ranges = data.google_netblock_ip_ranges.iap_forwarders.cidr_blocks
 }
 
-resource "google_compute_firewall" "allow_all_iap" {
-  provider = google
-  count    = var.skip_default_vpc_creation ? 0 : 1
-
-  name        = "fw-allow-all-iap"
-  description = "Allows ALL traffic from all known IP Addresses used by Cloud Identity-Aware Proxy"
-  network     = google_compute_network.default[0].name
-  project     = data.google_project.project.project_id
-
-  allow {
-    protocol = "all"
-  }
-
-  target_tags = [
-    "fw-allow-all-iap",
-  ]
-
-  source_ranges = data.google_netblock_ip_ranges.iap_forwarders.cidr_blocks
-}
