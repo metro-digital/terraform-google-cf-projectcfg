@@ -17,10 +17,10 @@
 
 provider "google" {
   project                     = local.project_id
-  impersonate_service_account = local.management_sa
+  impersonate_service_account = local.iac_service_account
 }
 
 provider "google-beta" {
   project                     = local.project_id
-  impersonate_service_account = local.management_sa
+  impersonate_service_account = local.iac_service_account
 }
