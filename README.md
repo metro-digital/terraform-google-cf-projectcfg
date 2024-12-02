@@ -58,6 +58,7 @@ in [data.tf](data.tf) - look for a local variable called `role_excludes`
 ```hcl
 module "projectcfg" {
   source      = "metro-digital/cf-projectcfg/google"
+  version     = "~> 2.4"
   project_id  = "metro-cf-example-ex1-e8v"
 
   roles = {
