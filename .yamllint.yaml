@@ -1,0 +1,16 @@
+---
+extends: default
+
+rules:
+  comments:
+    require-starting-space: true
+    ignore-shebangs: true
+    min-spaces-from-content: 1
+  braces:
+    forbid: false
+    max-spaces-inside: 1
+  line-length:
+    ignore: |
+      .github/dependabot.yaml
+      .github/workflows/*.yaml
+      .pre-commit-config.yaml
