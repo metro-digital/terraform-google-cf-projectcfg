@@ -155,6 +155,7 @@ check_program fold
 check_program dig
 
 # Trim trailing .git from repositories
+# shellcheck disable=SC2001
 GITHUB_REPOSITORY_PARAM=$(echo "$GITHUB_REPOSITORY_PARAM" | sed 's/\.git$//')
 
 # parameter validation / defaulting
