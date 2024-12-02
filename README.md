@@ -101,7 +101,6 @@ GitHub and similar things are explained giving simple examples.
 
 | Name | Description |
 |------|-------------|
-| metro_netblocks | METRO public netblocks detected and used by this module<br/><br/>Structure:<br/>{<br/>  ipv4 = list(string)<br/>  ipv6 = list(string)<br/>} |
 | project_id | GCP project ID |
 | service_accounts | List of service accounts created |
 <!-- END_TF_DOCS -->
