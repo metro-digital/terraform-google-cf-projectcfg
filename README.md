@@ -77,7 +77,7 @@ Please also take a deeper look into the [FAQ] - there are additional
 examples available. Examples how to use Workload Identity Federation with
 GitHub and similar things are explained giving simple examples.
 
-<!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- BEGIN_TF_DOCS -->
 ## Inputs
 
 | Name | Description | Type | Default | Required |
@@ -103,7 +103,7 @@ GitHub and similar things are explained giving simple examples.
 | metro_netblocks | METRO public netblocks detected and used by this module<br/><br/>Structure:<br/>{<br/>  ipv4 = list(string)<br/>  ipv6 = list(string)<br/>} |
 | project_id | GCP project ID |
 | service_accounts | List of service accounts created |
-<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END_TF_DOCS -->
 
 ## Requirements
 
