@@ -21,12 +21,8 @@
   - [Additional used IP ranges](#additional-used-ip-ranges)
 - [Preconfigured firewall rules](#preconfigured-firewall-rules)
   - [fw-allow-all-internal](#fw-allow-all-internal)
-  - [fw-allow-icmp-metro-public](#fw-allow-icmp-metro-public)
-  - [fw-allow-http-metro-public](#fw-allow-http-metro-public)
-  - [fw-allow-https-metro-public](#fw-allow-https-metro-public)
-  - [fw-allow-ssh-metro-public](#fw-allow-ssh-metro-public)
   - [fw-allow-ssh-iap](#fw-allow-ssh-iap)
-  - [fw-allow-all-iap](#fw-allow-all-iap)
+  - [fw-allow-rdp-iap](#fw-allow-rdp-iap)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
@@ -177,47 +173,15 @@ to use networks with a `/23` each.
 
 ## Preconfigured firewall rules
 
-The module creates some firewall rules allow basic network communication based
-on network tags.
+The module can create some firewall rules depending on your configuration.
+For details how to enable/disable firewalls, see the `firewall_rules` input.
 
 ### fw-allow-all-internal
 
-This rule allows all traffic from inside the VPC. Each instance inside the VPC
-can communicate with every other system
-using any kind of protocol.
+This rule allows all traffic within the VPC. Each instance inside the VPC
+can communicate with every other system using any kind of protocol.
 
 **Applies to:** Every instance inside VPC
-
-### fw-allow-icmp-metro-public
-
-This rule allows incoming ICMP (ping) traffic from all known Metro IP
-addresses (public)
-
-**Applies to:** Every instance inside VPC with network
-tag `fw-allow-icmp-metro-public`
-
-### fw-allow-http-metro-public
-
-This rule allows HTTP traffic from all known Metro IP Addresses (public)
-
-**Applies to:** Every instance inside VPC with network
-tag `fw-allow-http-metro-public`
-
-### fw-allow-https-metro-public
-
-This rule allows HTTPS traffic from all known Metro IP Addresses (public)
-
-**Applies to:** Every instance inside VPC with network
-tag `fw-allow-https-metro-public`
-
-### fw-allow-ssh-metro-public
-
-This rule allows SSH traffic from all known Metro IP Addresses (public). Usage
-of this rule is **not recommend** to
-access instances via SSH. **Please use IAP whenever possible.**
-
-**Applies to:** Every instance inside VPC with network
-tag `fw-allow-ssh-metro-public`
 
 ### fw-allow-ssh-iap
 
@@ -226,12 +190,12 @@ Identity-Aware Proxy
 
 **Applies to:** Every instance inside VPC with network tag `fw-allow-ssh-iap`
 
-### fw-allow-all-iap
+### fw-allow-rdp-iap
 
-This rule allows ALL traffic from all known IP Addresses used by Cloud
+This rule allows RDP traffic from all known IP Addresses used by Cloud
 Identity-Aware Proxy
 
-**Applies to:** Every instance inside VPC with network tag `fw-allow-all-iap`
+**Applies to:** Every instance inside VPC with network tag `fw-allow-rdp-iap`
 
 [RFC 1918]: https://datatracker.ietf.org/doc/html/rfc1918
 [proxy only subnets]: https://cloud.google.com/load-balancing/docs/proxy-only-subnets
