@@ -159,17 +159,6 @@ variable "roles" {
   type = map(list(string))
 }
 
-variable "deprivilege_compute_engine_sa" {
-  description = <<-EOD
-    By default the compute engine service account (*project-number*-compute@developer.gserviceaccount.com) is assigned `roles/editor`
-    If you want to deprivilege the account set this to true, and grant needed permissions via roles variable.
-    Otherwise the module will grant `roles/editor` to the service account.
-  EOD
-
-  type    = bool
-  default = false
-}
-
 variable "custom_roles" {
   description = <<-EOD
     Create custom roles and define who gains that role on project level
