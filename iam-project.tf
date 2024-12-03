@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,9 @@
 
 locals {
   always_add_permissions = {
-    "roles/editor" = compact(flatten(
-      concat(
-        # always add cloud services, see: https://cloud.google.com/iam/docs/service-account-types#google-apis-service-agent
-        [format("serviceAccount:%s@cloudservices.gserviceaccount.com", data.google_project.project.number)],
-        var.deprivilege_compute_engine_sa ? [] : [format("serviceAccount:%s-compute@developer.gserviceaccount.com", data.google_project.project.number)]
-      )
-    ))
+    "roles/editor" = [
+      format("serviceAccount:%s@cloudservices.gserviceaccount.com", data.google_project.project.number)
+    ]
   }
 
   sa_roles = compact(flatten(concat([for sa, sa_cfg in var.service_accounts : sa_cfg.project_roles if sa_cfg.project_roles != null])))
