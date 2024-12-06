@@ -330,7 +330,7 @@ variable "service_accounts" {
   type = map(object({
     display_name                = string
     description                 = optional(string)
-    iam                         = map(list(string))
+    iam                         = optional(map(list(string)), {})
     project_roles               = optional(list(string))
     iam_non_authoritative_roles = optional(list(string))
     github_action_repositories  = optional(list(string), [])
