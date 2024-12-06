@@ -27,5 +27,13 @@ terraform {
       version = "~> 2.0"
     }
   }
-  required_version = ">= 1.3.1"
+  required_version = ">= 1.9"
+
+  provider_meta "google" {
+    module_name = "metro/cf/projectcfg/v2.4.1"
+  }
+
+  google-beta "google" {
+    module_name = "metro/cf/projectcfg/v2.4.1"
+  }
 }
