@@ -9,7 +9,7 @@
       "extra-files": [
         {
           "type": "generic",
-          "path": "bootstrap/terraform/templates/project.tf.in"
+          "path": "bootstrap/terraform/locals.tf"
         }
       ]
     }
