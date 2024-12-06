@@ -33,7 +33,7 @@ terraform {
     module_name = "metro/cf/projectcfg/v2.4.1"
   }
 
-  google-beta "google" {
+  provider_meta "google-beta" {
     module_name = "metro/cf/projectcfg/v2.4.1"
   }
 }
