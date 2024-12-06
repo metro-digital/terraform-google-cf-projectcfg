@@ -4,7 +4,7 @@
 **/*.iml
 .vscode
 
-# terraform / terragrunt
+# terraform
 **/.terraform/
 **/.terraform.tfstate.lock.info
 **/terraform.tfstate
@@ -21,5 +21,3 @@
 ehthumbs.db
 Thumbs.db
 .terraform.lock.hcl
-
-bootstrap/iac-output
