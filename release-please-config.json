@@ -3,7 +3,7 @@
   "release-type": "terraform-module",
   "draft-pull-request": true,
   "include-v-in-tag": true,
-  "changelog-type": "github",
+  "changelog-type": "default",
   "packages": {
     ".": {
       "extra-files": [
