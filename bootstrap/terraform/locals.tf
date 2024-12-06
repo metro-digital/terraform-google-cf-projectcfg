@@ -70,7 +70,7 @@ locals {
   # a version per line, or replace the version with the full new version. As we are using the pessimistic version
   # operator, the do not want to include the patch version. So we build it here with some helper variables and
   # pass it into the template
-  module_major_version = 2 # x-release-please-major
-  module_minor_version = 4 # x-release-please-minor
+  module_major_version = 3 # x-release-please-major
+  module_minor_version = 0 # x-release-please-minor
   module_version       = "${local.module_major_version}.${local.module_minor_version}"
 }
