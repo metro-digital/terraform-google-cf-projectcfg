@@ -61,4 +61,16 @@ locals {
   manager_group_service_account_iam_roles = [
     "roles/iam.serviceAccountTokenCreator",
   ]
+
+  # We build the version string to be passed to the generated terraform
+  # code here based on information updated by release-please
+  # We have to do it within this terraform code, as the Generic updated
+  # (see https://github.com/googleapis/release-please/blob/main/docs/customizing.md)
+  # does not support updating the version directly in the template. It can only update single parts of
+  # a version per line, or replace the version with the full new version. As we are using the pessimistic version
+  # operator, the do not want to include the patch version. So we build it here with some helper variables and
+  # pass it into the template
+  module_major_version = 2 # x-release-please-major
+  module_minor_version = 4 # x-release-please-minor
+  module_version       = "${local.module_major_version}.${local.module_minor_version}"
 }
