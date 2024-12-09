@@ -310,6 +310,14 @@ else
 	fi
 fi
 
+# Ensure Terraform adjusts its output to avoid suggesting specific commands to run next.
+export TF_IN_AUTOMATION=yes
+# Set the DATA_DIR to a project specific one to avoid any issue if the directory is not cleaned
+# between bootstrapping different projects
+export TF_DATA_DIR=".terraform-${GCP_PROJECT_ID}"
+# also use the project ID as workspace for the same reason
+export TF_WORKSPACE="${GCP_PROJECT_ID}"
+
 echo "Starting first stage terraform init." | fold -s -w 80
 
 terraform -chdir=terraform init
@@ -329,6 +337,11 @@ terraform -chdir=terraform apply -auto-approve \
 	-var="output_dir=${OUTPUT_DIR}"
 
 echo "Finished first stage terraform apply." | fold -s -w 80
+
+# Unset TF_DATA_DIR to fall back to normal .terraform folder
+unset TF_DATA_DIR
+# also unset the workspace as we now operate on the bootstrap code that doesnt know about workspaces
+unset TF_WORKSPACE
 
 echo "Starting second stage terraform init with state migration using generated code." | fold -s -w 80
 

@@ -24,20 +24,7 @@ data "google_netblock_ip_ranges" "iap_forwarders" {
   range_type = "iap-forwarders"
 }
 
-data "external" "metro_netblocks" {
-  provider = external
-  program  = ["bash", "${path.module}/get-metro-netblocks.sh"]
-}
-
-locals {
-  metro_netblocks = {
-    ipv4 = split(" ", data.external.metro_netblocks.result.ipv4)
-    ipv6 = split(" ", data.external.metro_netblocks.result.ipv6)
-  }
-}
-
-data "google_client_config" "current" {
-}
+data "google_client_config" "current" {}
 
 # active IAM roles
 data "external" "active_roles" {

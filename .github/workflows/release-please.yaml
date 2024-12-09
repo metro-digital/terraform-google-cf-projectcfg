@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,29 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+---
+on:
+  push:
+    branches:
+      - main
 
-terraform {
-  required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = ">= 4.29.0"
-    }
-    google-beta = {
-      source  = "hashicorp/google-beta"
-      version = ">= 4.29.0"
-    }
-    external = {
-      source  = "hashicorp/external"
-      version = "~> 2.0"
-    }
-  }
-  required_version = ">= 1.9"
+permissions:
+  contents: write
+  pull-requests: write
 
-  provider_meta "google" {
-    module_name = "metro/cf/projectcfg/v2.4.1"
-  }
+name: release-please
 
-  provider_meta "google-beta" {
-    module_name = "metro/cf/projectcfg/v2.4.1"
-  }
-}
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4

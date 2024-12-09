@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -65,10 +65,39 @@ variable "enabled_services_disable_on_destroy" {
 variable "skip_default_vpc_creation" {
   description = <<-EOD
     When set to true the module will not create the default VPC or any
-    related resource like NAT Gateway or serverless VPC access configuration.
+    related resource like NAT Gateway, firewall rules or Serverless VPC access configuration.
   EOD
   type        = bool
   default     = false
+}
+
+variable "firewall_rules" {
+  description = <<-EOD
+    The module will create default firewall rules unless `skip_default_vpc_creation` is set to `true`
+
+    The following rules are created by default:
+      - **`allow_ssh_iap`:** A firewall rule allowing SSH via IAP if the network tag `fw-allow-ssh-iap`
+        is set on an Compute Instance
+      - **`allow_rdp_iap`:** A firewall rule allowing SSH via IAP if the network tag `fw-allow-rdp-iap`
+        is set on an Compute Instance
+
+    The following additional rules are available if explicitly enabled:
+      - **`all_internal`:** A firewall rule allowing all kinds of traffic inside the VPC
+
+    Example:
+    ```
+    # Disable IAP RDP rule rule, keep default for all other rules
+    firewall_rules = {
+      allow_rdp_iap = false
+    }
+    ```
+  EOD
+  type = object({
+    all_internal  = optional(bool, false)
+    allow_ssh_iap = optional(bool, true)
+    allow_rdp_iap = optional(bool, true)
+  })
+  default = {}
 }
 
 variable "vpc_regions" {
@@ -157,17 +186,6 @@ variable "roles" {
   EOD
 
   type = map(list(string))
-}
-
-variable "deprivilege_compute_engine_sa" {
-  description = <<-EOD
-    By default the compute engine service account (*project-number*-compute@developer.gserviceaccount.com) is assigned `roles/editor`
-    If you want to deprivilege the account set this to true, and grant needed permissions via roles variable.
-    Otherwise the module will grant `roles/editor` to the service account.
-  EOD
-
-  type    = bool
-  default = false
 }
 
 variable "custom_roles" {

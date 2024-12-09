@@ -18,7 +18,7 @@
 module "projectcfg" {
   source     = "metro-digital/cf-projectcfg/google"
   project_id = local.project_id
-  version    = "~> 2.3"
+  version    = "~> ${MODULE_VERSION}"
 
   roles = {
     "roles/browser" = [

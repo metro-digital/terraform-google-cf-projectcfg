@@ -1,4 +1,4 @@
-# Copyright 2022 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 ---
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: c4a0b883114b00d8d76b479c820ce7950211c99b  # frozen: v4.5.0
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # frozen: v5.0.0
     hooks:
       - id: detect-private-key
       - id: end-of-file-fixer
@@ -22,7 +22,7 @@ repos:
       - id: mixed-line-ending
         args: ['--fix', 'lf']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: 8d41a13a731d43fda68af0e20a99a879c294950d  # frozen: v1.86.1
+    rev: e0322737dccad136b751416f9e45d9980fe18435  # frozen: v1.96.2
     hooks:
       - id: terraform_fmt
         exclude: ^/.+/$
@@ -38,7 +38,7 @@ repos:
         args:
           - --args=--config=.terraform-docs.yml
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: dd99a1c965b56027e9773442f41d3c58cc53c690  # frozen: v1.34.0
+    rev: 81e9f98ffd059efe8aa9c1b1a42e5cce61b640c6  # frozen: v1.35.1
     hooks:
       - id: yamllint
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
@@ -47,6 +47,12 @@ repos:
       - id: script-must-have-extension
       - id: shellcheck
       - id: shfmt
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: 0acb67b29767c5e1b7d0eab3e557c29c1797b183  # frozen: v9.19.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ['@commitlint/config-conventional']
   - repo: https://github.com/thlorenz/doctoc
     rev: 70fdcd39ef919754011a827bd25f23a0b141c3c3  # frozen: v2.2.0
     hooks:

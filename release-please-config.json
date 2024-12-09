@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "terraform-module",
+  "draft-pull-request": true,
+  "include-v-in-tag": true,
+  "changelog-type": "default",
+  "packages": {
+    ".": {
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "bootstrap/terraform/locals.tf"
+        }
+      ]
+    }
+  }
+}
