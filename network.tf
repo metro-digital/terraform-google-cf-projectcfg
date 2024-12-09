@@ -204,3 +204,17 @@ resource "google_compute_subnetwork" "proxy_only" {
   role          = "ACTIVE"
   network       = google_compute_network.default[0].name
 }
+
+resource "google_dns_policy" "logging" {
+  name  = "logging"
+  count = var.skip_default_vpc_creation ? var.skip_default_vpc_dns_logging_policy ? 0 : 1 : 1
+
+  description = "Enable DNS logging to be compliant with Cloud policies"
+  project     = var.project_id
+
+  enable_logging = true
+
+  networks {
+    network_url = google_compute_network.default.id
+  }
+}

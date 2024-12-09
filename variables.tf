@@ -71,6 +71,16 @@ variable "skip_default_vpc_creation" {
   default     = false
 }
 
+variable "skip_default_vpc_dns_logging_policy" {
+  description = <<-EOD
+    When set to true, the module will not create a DNS policy to enable DNS logging.
+    As DNS logging is mandatory, you should only disable the policy creation if you plan
+    to implement your own policy for further adjustments.
+  EOD
+  type        = bool
+  default     = true
+}
+
 variable "firewall_rules" {
   description = <<-EOD
     The module will create default firewall rules unless `skip_default_vpc_creation` is set to `true`
