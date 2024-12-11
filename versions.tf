@@ -30,10 +30,10 @@ terraform {
   required_version = ">= 1.9"
 
   provider_meta "google" {
-    module_name = "metro/cf/projectcfg/v2.4.1"
+    module_name = "metro/cf/projectcfg/v3.0.0"
   }
 
   provider_meta "google-beta" {
-    module_name = "metro/cf/projectcfg/v2.4.1"
+    module_name = "metro/cf/projectcfg/v3.0.0"
   }
 }
