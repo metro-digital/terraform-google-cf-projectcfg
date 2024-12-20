@@ -2,3 +2,4 @@
 terraform/.terraform*/
 terraform/terraform.tfstate.d/
 iac-output/
+*.tfvars

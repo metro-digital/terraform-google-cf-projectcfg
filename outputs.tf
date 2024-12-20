@@ -14,16 +14,7 @@
 
 output "project_id" {
   description = "GCP project ID"
-  value       = data.google_project.project.project_id
-
-  depends_on = [
-    # external data sources
-    data.external.active_roles,
-    data.external.sa_non_authoritative_role_members,
-    # iam project roles
-    google_project_iam_binding.roles,
-    google_project_iam_binding.custom_roles,
-  ]
+  value       = data.google_project.this.project_id
 }
 
 output "service_accounts" {

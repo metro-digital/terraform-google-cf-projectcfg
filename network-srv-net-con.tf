@@ -23,13 +23,12 @@ resource "google_compute_global_address" "google_managed_services" {
   address       = local.default_vpc_private_peering.address
   prefix_length = local.default_vpc_private_peering.prefix_length
   network       = google_compute_network.default[0].self_link
-  project       = data.google_project.project.project_id
+  project       = data.google_project.this.project_id
 
   # ensure we have necessary permissions
   depends_on = [
-    google_project_iam_binding.roles,
+    google_project_iam_policy.this,
     google_project_iam_custom_role.custom_roles,
-    google_project_iam_binding.custom_roles
   ]
 }
 

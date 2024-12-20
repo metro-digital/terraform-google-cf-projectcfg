@@ -37,6 +37,19 @@ resource "google_project_service" "this" {
   depends_on = [google_project_iam_member.manager_group]
 }
 
+resource "time_sleep" "manager_rights" {
+
+  create_duration = var.time_sleep
+
+  triggers = {
+    services_md5 = md5(join(",", keys(google_project_iam_member.manager_group)))
+  }
+
+  depends_on = [
+    google_project_iam_member.manager_group
+  ]
+}
+
 # Create the Terraform IaC service account for impersonation
 # in the second stage, where generated Terraform code is executed.
 resource "google_service_account" "this" {
@@ -45,6 +58,7 @@ resource "google_service_account" "this" {
   project      = var.project
 
   depends_on = [
+    time_sleep.manager_rights,
     google_project_iam_member.manager_group,
     google_project_service.this,
   ]
@@ -146,8 +160,7 @@ resource "google_storage_bucket" "this" {
 # the generated Terraform code using Terraform IaC service account.
 # Triggers only on change of the roles list and storage bucket creation
 # to avoid executing the delay on subsequent executions.
-resource "time_sleep" "this" {
-
+resource "time_sleep" "final" {
   create_duration = var.time_sleep
 
   triggers = {

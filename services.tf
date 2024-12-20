@@ -33,10 +33,35 @@ locals {
   )
 }
 
-resource "google_project_service" "project" {
+resource "google_project_service" "this" {
   for_each = local.services
 
-  project            = data.google_project.project.project_id
+  project            = data.google_project.this.project_id
   service            = each.key
   disable_on_destroy = var.enabled_services_disable_on_destroy
+}
+
+# servicenetworking.googleapis.com is always enabled by this module
+# but sometimes this permission is not set on the needed service account.
+# This resource makes sure it's always there.
+resource "google_project_service_identity" "servicenetworking_service_account" {
+  provider = google-beta
+
+  project = data.google_project.this.project_id
+  service = "servicenetworking.googleapis.com"
+
+  depends_on = [
+    google_project_service.this
+  ]
+}
+
+resource "google_project_iam_member" "servicenetworking_service_account_binding" {
+  project = data.google_project.this.project_id
+  role    = "roles/servicenetworking.serviceAgent"
+  member  = "serviceAccount:${google_project_service_identity.servicenetworking_service_account.email}"
+
+  depends_on = [
+    google_project_service.this,
+    google_project_service_identity.servicenetworking_service_account
+  ]
 }

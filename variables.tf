@@ -163,7 +163,7 @@ variable "vpc_regions" {
 /* IAM                                                                                            */
 /*                                                                                                */
 /**************************************************************************************************/
-variable "roles" {
+variable "iam_policy" {
   description = <<-EOD
     IAM roles and their members.
 
@@ -173,7 +173,7 @@ variable "roles" {
 
     Example:
     ```
-    roles = {
+    iam_policy = {
       "roles/bigquery.admin" = [
         "group:customer.project-role@cloudfoundation.metro.digital",
         "user:some.user@metro.digital",
@@ -185,7 +185,43 @@ variable "roles" {
     ```
   EOD
 
-  type = map(list(string))
+  type = list(object({
+    role    = string
+    members = list(string)
+    condition = optional(object({
+      title       = string
+      expression  = string
+      description = optional(string, null)
+    }), null)
+  }))
+
+  default = []
+}
+
+variable "iam_policy_non_authoritative_roles" {
+  description = <<-EOD
+    List of roles (regex) to exclude from authoritative project IAM handling.
+    Roles listed here can have bindings outside of this module.
+
+    Example:
+    ```
+    non_authoritative_roles = [
+      "roles/container.hostServiceAgentUser"
+    ]
+    ```
+  EOD
+  type        = list(string)
+  default     = []
+}
+
+variable "iam_policy_keep_pam_bindings" {
+  description = <<-EOD
+    When set to true, the module will keep any PAM related binding in the projects
+    IAM policy.
+  EOD
+  type        = bool
+  default     = true
+  nullable    = false
 }
 
 variable "custom_roles" {
@@ -210,10 +246,10 @@ variable "custom_roles" {
   EOD
 
   type = map(object({
-    title       = string
-    description = string
-    permissions = list(string)
-    members     = list(string)
+    title                      = string
+    description                = string
+    permissions                = list(string)
+    project_iam_policy_members = list(string)
   }))
 
   default = {}
@@ -236,10 +272,10 @@ variable "service_accounts" {
     **`project_roles` (optional):** IAM permissions assigned to this Service Account on *project level*.
     This parameter is merged with whatever is provided as the project's IAM policy via the `roles` input.
 
-    **`iam_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative policy
-    with its current value as defined in the Google Cloud Platform. Example use case: Composer 2 adds values to
-    `roles/iam.workloadIdentityUser` binding when an environment is created or updated. Thus, you might want to
-    automatically import those permissions.
+    **`iam_policy_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative
+    policy with its current value as defined in the Google Cloud Platform. Can contain regex patterns.
+    Example use case: Composer 2 adds values to `roles/iam.workloadIdentityUser` binding when an environment is
+    created or updated. Thus, you might want to automatically import those permissions.
 
     **`runtime_service_accounts` (optional):** You can list Kubernetes Service Accounts within Cloud Native Runtime
     clusters here. For details on the format, see the example below. A Workload Identity Pool and a Workload Identity
@@ -328,12 +364,20 @@ variable "service_accounts" {
   EOD
 
   type = map(object({
-    display_name                = string
-    description                 = optional(string)
-    iam                         = optional(map(list(string)), {})
-    project_roles               = optional(list(string))
-    iam_non_authoritative_roles = optional(list(string))
-    github_action_repositories  = optional(list(string), [])
+    display_name = string
+    description  = optional(string)
+    iam_policy = optional(list(object({
+      role    = string
+      members = list(string)
+      condition = optional(object({
+        title       = string
+        expression  = string
+        description = optional(string, null)
+      }), null)
+    })), [])
+    iam_policy_non_authoritative_roles = optional(list(string), [])
+    project_iam_policy_roles           = optional(list(string), [])
+    github_action_repositories         = optional(list(string), [])
     runtime_service_accounts = optional(list(object({
       cluster_id      = string
       namespace       = string
@@ -342,22 +386,6 @@ variable "service_accounts" {
   }))
 
   default = {}
-}
-
-variable "non_authoritative_roles" {
-  description = <<-EOD
-    List of roles (regex) to exclude from authoritative project IAM handling.
-    Roles listed here can have bindings outside of this module.
-
-    Example:
-    ```
-    non_authoritative_roles = [
-      "roles/container.hostServiceAgentUser"
-    ]
-    ```
-  EOD
-  type        = list(string)
-  default     = []
 }
 
 variable "essential_contacts" {

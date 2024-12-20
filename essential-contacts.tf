@@ -1,5 +1,5 @@
 resource "google_project_service" "essential_contacts" {
-  project = data.google_project.project.project_id
+  project = data.google_project.this.project_id
   count   = length(var.essential_contacts) > 0 ? 1 : 0
   service = "essentialcontacts.googleapis.com"
 
@@ -13,13 +13,13 @@ resource "google_project_service" "essential_contacts" {
 
 resource "google_essential_contacts_contact" "contact" {
   for_each                            = var.essential_contacts
-  parent                              = data.google_project.project.id
+  parent                              = data.google_project.this.id
   email                               = each.key
   language_tag                        = each.value.language
   notification_category_subscriptions = each.value.categories
 
   depends_on = [
     google_project_service.essential_contacts,
-    google_project_iam_binding.roles
+    google_project_iam_policy.this
   ]
 }

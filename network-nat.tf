@@ -29,7 +29,7 @@ resource "google_compute_router" "router" {
   for_each = local.nat_config_regions
 
   name    = "router-${each.key}"
-  project = data.google_project.project.project_id
+  project = data.google_project.this.project_id
   region  = each.key
   network = google_compute_network.default[0].self_link
 }
@@ -40,7 +40,7 @@ resource "google_compute_address" "address" {
 
   name         = "nat-ip-${each.key}"
   address_type = "EXTERNAL"
-  project      = data.google_project.project.project_id
+  project      = data.google_project.this.project_id
   region       = substr(each.key, 0, length(each.key) - 5)
 }
 
@@ -50,7 +50,7 @@ resource "google_compute_router_nat" "nat" {
 
   name                               = "nat-${each.key}"
   router                             = google_compute_router.router[each.key].name
-  project                            = data.google_project.project.project_id
+  project                            = data.google_project.this.project_id
   region                             = each.key
   nat_ip_allocate_option             = "MANUAL_ONLY"
   nat_ips                            = [for ip in each.value.ips : google_compute_address.address[ip].self_link]

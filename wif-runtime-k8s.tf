@@ -21,14 +21,14 @@ locals {
 resource "google_iam_workload_identity_pool" "runtime_k8s" {
   provider = google
   for_each = local.wif_runtime_k8s_clusters
-  project  = data.google_project.project.project_id
+  project  = data.google_project.this.project_id
 
   workload_identity_pool_id = md5(each.key)
   display_name              = each.key
   description               = "Allows authentication from Cloud Native Runtime Kubernetes cluster '${each.key}'"
 
   depends_on = [
-    google_project_iam_binding.roles,
+    google_project_iam_policy.this,
     google_project_service.wif
   ]
 }
@@ -36,7 +36,7 @@ resource "google_iam_workload_identity_pool" "runtime_k8s" {
 resource "google_iam_workload_identity_pool_provider" "runtime_k8s_cluster" {
   provider = google
   for_each = local.wif_runtime_k8s_clusters
-  project  = data.google_project.project.project_id
+  project  = data.google_project.this.project_id
 
   workload_identity_pool_id          = google_iam_workload_identity_pool.runtime_k8s[each.key].workload_identity_pool_id
   workload_identity_pool_provider_id = "kubernetes"

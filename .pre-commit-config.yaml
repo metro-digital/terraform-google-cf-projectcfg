@@ -25,19 +25,16 @@ repos:
     rev: e0322737dccad136b751416f9e45d9980fe18435  # frozen: v1.96.2
     hooks:
       - id: terraform_fmt
-        exclude: ^/.+/$
       - id: terraform_tflint
-        exclude: ^/.+/$
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
       - id: terraform_tfsec
-        exclude: ^/.+/$
         args:
-          - --args=--config-file=__GIT_WORKING_DIR__/.tfsec/config.yml
+          - --args=--config-file=__GIT_WORKING_DIR__/.tfsec/config.yaml
       - id: terraform_docs
         args:
-          - --args=--config=.terraform-docs.yml
-  - repo: https://github.com/adrienverge/yamllint.git
+          - --args=--config=.terraform-docs.yaml
+  - repo: https://github.com/adrienverge/yamllint
     rev: 81e9f98ffd059efe8aa9c1b1a42e5cce61b640c6  # frozen: v1.35.1
     hooks:
       - id: yamllint
