@@ -27,7 +27,7 @@ resource "google_compute_firewall" "allow_all_internal" {
   name        = "fw-allow-all-internal"
   description = "Allows all traffic from inside VPC"
   network     = google_compute_network.default[0].name
-  project     = data.google_project.project.project_id
+  project     = data.google_project.this.project_id
 
   allow {
     protocol = "all"
@@ -43,7 +43,7 @@ resource "google_compute_firewall" "allow_ssh_iap" {
   name        = "fw-allow-ssh-iap"
   description = "Allows SSH traffic from all known IP Addresses used by Cloud Identity-Aware Proxy"
   network     = google_compute_network.default[0].name
-  project     = data.google_project.project.project_id
+  project     = data.google_project.this.project_id
 
   allow {
     protocol = "tcp"
@@ -64,7 +64,7 @@ resource "google_compute_firewall" "allow_rdp_iap" {
   name        = "fw-allow-rdp-iap"
   description = "Allows RDP traffic from all known IP Addresses used by Cloud Identity-Aware Proxy"
   network     = google_compute_network.default[0].name
-  project     = data.google_project.project.project_id
+  project     = data.google_project.this.project_id
 
   allow {
     protocol = "tcp"

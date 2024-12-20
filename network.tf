@@ -1,4 +1,4 @@
-# Copyright 2023 METRO Digital GmbH
+# Copyright 2024 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -133,14 +133,13 @@ resource "google_compute_network" "default" {
 
   name                    = "default"
   description             = "Default VPC network for the project"
-  project                 = data.google_project.project.project_id
+  project                 = data.google_project.this.project_id
   auto_create_subnetworks = false
   # ensure necessary services are enabled and permissions granted
   depends_on = [
-    google_project_service.project,
-    google_project_iam_binding.roles,
+    google_project_service.this,
+    google_project_iam_policy.this,
     google_project_iam_custom_role.custom_roles,
-    google_project_iam_binding.custom_roles
   ]
 }
 
@@ -155,7 +154,7 @@ resource "google_compute_subnetwork" "default" {
   private_ip_google_access = true
   ip_cidr_range            = local.default_vpc_primary_ranges[each.key]
   network                  = google_compute_network.default[0].name
-  project                  = data.google_project.project.project_id
+  project                  = data.google_project.this.project_id
 
   dynamic "secondary_ip_range" {
     # use anytrue as the parameter is optional, means can be null
@@ -167,7 +166,7 @@ resource "google_compute_subnetwork" "default" {
 
     }
   }
-  depends_on = [google_project_service.project]
+  depends_on = [google_project_service.this]
 }
 
 resource "google_vpc_access_connector" "default" {
@@ -180,10 +179,10 @@ resource "google_vpc_access_connector" "default" {
   name          = each.key
   region        = each.key
   ip_cidr_range = each.value.cidr
-  project       = data.google_project.project.project_id
+  project       = data.google_project.this.project_id
   network       = google_compute_network.default[0].name
   depends_on = [
-    google_project_service.project,
+    google_project_service.this,
     google_compute_subnetwork.default
   ]
 }
@@ -199,7 +198,7 @@ resource "google_compute_subnetwork" "proxy_only" {
   name          = "proxy-only-${each.key}"
   region        = each.key
   ip_cidr_range = each.value.cidr
-  project       = data.google_project.project.project_id
+  project       = data.google_project.this.project_id
   purpose       = "INTERNAL_HTTPS_LOAD_BALANCER"
   role          = "ACTIVE"
   network       = google_compute_network.default[0].name
@@ -215,6 +214,10 @@ resource "google_dns_policy" "logging" {
   enable_logging = true
 
   networks {
-    network_url = google_compute_network.default.id
+    network_url = google_compute_network.default[0].id
   }
+
+  depends_on = [
+    google_project_service.this
+  ]
 }

@@ -13,12 +13,18 @@
 # limitations under the License.
 
 variable "project_id" {
-  description = "GCP project ID"
+  description = <<-EOD
+    Google Cloud project ID. The module can only be used with projects managed via the Cloud FFoundation Panel.
+  EOD
   type        = string
+  nullable    = false
 
   validation {
     condition     = can(regex("^[a-z][a-z0-9-]{4,30}[a-z0-9]", var.project_id))
-    error_message = "The ID of the project. It must be 6 to 30 lowercase letters, digits, or hyphens. It must start with a letter. Trailing hyphens are prohibited."
+    error_message = <<-EOM
+      It must be 6 to 30 lowercase letters, digits, or hyphens. It must start with a letter.
+      Trailing hyphens are prohibited.
+    EOM
   }
 }
 
@@ -28,8 +34,8 @@ variable "enabled_services" {
 
     **Remark**: Google sometimes changes (mostly adding) dependencies and will activate those automatically for your
     project. Therefore being authoritative on services usually causes a lot of trouble. The module doesn't provide any
-    option to be authoritative for this reason. By default we are partly authoritative. This can can be controlled
-    by the `enabled_services_disable_on_destroy` flag.
+    option to be authoritative for this reason. By default it is partly authoritative, means a removed service is
+    disabled when removed from this list. This can can be controlled by the `enabled_services_disable_on_destroy` flag.
 
     Example:
     ```
@@ -64,8 +70,8 @@ variable "enabled_services_disable_on_destroy" {
 /**************************************************************************************************/
 variable "skip_default_vpc_creation" {
   description = <<-EOD
-    When set to true the module will not create the default VPC or any
-    related resource like NAT Gateway, firewall rules or Serverless VPC access configuration.
+    When set to true the module will not create the default VPC or any related resource like NAT Gateway, firewall rules
+    or Serverless VPC access configuration.
   EOD
   type        = bool
   default     = false
@@ -83,7 +89,7 @@ variable "skip_default_vpc_dns_logging_policy" {
 
 variable "firewall_rules" {
   description = <<-EOD
-    The module will create default firewall rules unless `skip_default_vpc_creation` is set to `true`
+    The module will create default firewall rules unless `skip_default_vpc_creation` is set to `true`.
 
     The following rules are created by default:
       - **`allow_ssh_iap`:** A firewall rule allowing SSH via IAP if the network tag `fw-allow-ssh-iap`
@@ -164,7 +170,17 @@ variable "vpc_regions" {
       "europe-central2",
       "europe-southwest1"
     ])) == 0
-    error_message = "Invalid region given, must be any of: europe-west1, europe-west3, europe-west4, europe-west8, europe-west9, europe-north1, europe-central2 or europe-southwest1."
+    error_message = <<-EOM
+      Invalid region given, must be any of:
+        - europe-west1
+        - europe-west3
+        - europe-west4
+        - europe-west8
+        - europe-west9
+        - europe-north1
+        - europe-central2
+        - europe-southwest1."
+    EOM
   }
 }
 
@@ -173,34 +189,100 @@ variable "vpc_regions" {
 /* IAM                                                                                            */
 /*                                                                                                */
 /**************************************************************************************************/
-variable "roles" {
+variable "iam_policy" {
   description = <<-EOD
     IAM roles and their members.
 
-    If you create a service account in this project via the `service_accounts` input, we recommend
-    to use the `project_roles` attribute of the respective service account to grant it permissions
-    on the project's IAM policy. This allows you to better re-use your code in staged environments.
+    If you create a service account in this project via the `service_accounts` input variable, it's recommend
+    to use the `project_iam_policy_roles` attribute of the respective service account to grant it permissions
+    on the project's IAM policy. This allows better re-use your code in staged environments.
+
+    Expected input is a list of IAM binding objects with the following attributes:
+
+    **`role`:** The role to be granted with the binding. Can be any pre-defined or custom role. If the custom role is
+    created via the `custom_roles` input variable of this module, use this variable's `project_iam_policy_members`
+    attribute to assign principals to that role on project level.
+
+    **`members`:** A list of principals the given role should be granted to.
+
+    **`condition` (optional):**  An optional condition to be assigned to the IAM binding. For details on the condition's
+    attributes see: https://cloud.google.com/iam/docs/conditions-overview#structure
 
     Example:
     ```
-    roles = {
-      "roles/bigquery.admin" = [
-        "group:customer.project-role@cloudfoundation.metro.digital",
-        "user:some.user@metro.digital",
-      ],
-      "roles/cloudsql.admin" = [
-        "group:customer.project-role@cloudfoundation.metro.digital",
-      ]
-    }
+    iam_policy = [
+      # Allow a group to use this project
+      # as billing project for BigQuery jobs
+      {
+        role = "roles/bigquery.jobUser"
+        members = [
+          "group:group1@cloudfoundation.metro.digital",
+        ]
+      },
+      # Same for another group, but only during working days from 07:00 till 18:59
+      {
+        role = "roles/bigquery.jobUser"
+        members = [
+          "group:group2@cloudfoundation.metro.digital",
+        ]
+        condition = {
+          title       = "Working Hours"
+          description = "Allow during working hours (Monday-Friday, 7:00 to 18:59)"
+          expression  = <<-EOC
+            request.time.getHours('Europe/Berlin') >= 7 &&
+            request.time.getHours('Europe/Berlin') < 19 &&
+            // Days of the week range from 0 to 6, where 0 == Sunday and 6 == Saturday.
+            request.time.getDayOfWeek('Europe/Berlin') >= 1 &&
+            request.time.getDayOfWeek('Europe/Berlin') <= 5
+          EOC
+        }
+      }
+    ]
     ```
   EOD
 
-  type = map(list(string))
+  type = list(object({
+    role    = string
+    members = list(string)
+    condition = optional(object({
+      title       = string
+      expression  = string
+      description = optional(string, null)
+    }), null)
+  }))
+
+  default = []
+}
+
+variable "iam_policy_non_authoritative_roles" {
+  description = <<-EOD
+    List of roles (regex) to exclude from authoritative project IAM handling.
+    Roles listed here can have bindings outside of this module.
+
+    Example:
+    ```
+    iam_policy_non_authoritative_roles = [
+      "roles/container.hostServiceAgentUser"
+    ]
+    ```
+  EOD
+  type        = list(string)
+  default     = []
+}
+
+variable "iam_policy_keep_pam_bindings" {
+  description = <<-EOD
+    When set to true, the module will keep any PAM-related binding in the project's IAM policy.
+  EOD
+  type        = bool
+  default     = true
+  nullable    = false
 }
 
 variable "custom_roles" {
   description = <<-EOD
-    Create custom roles and define who gains that role on project level
+    Create custom roles and define who gains that role on project level. If your project level IAM binding needs to set
+    a condition, use the `iam_policy` input variable of this module while referencing the full name of your custom role.
 
     Example:
     ```
@@ -211,7 +293,7 @@ variable "custom_roles" {
         permissions = [
           "appengine.applications.create",
         ]
-        members = [
+        project_iam_policy_members = [
           "group:customer.project-role@cloudfoundation.metro.digital",
         ]
       }
@@ -220,10 +302,10 @@ variable "custom_roles" {
   EOD
 
   type = map(object({
-    title       = string
-    description = string
-    permissions = list(string)
-    members     = list(string)
+    title                      = string
+    description                = string
+    permissions                = list(string)
+    project_iam_policy_members = list(string)
   }))
 
   default = {}
@@ -237,21 +319,21 @@ variable "service_accounts" {
 
     **`description` (optional):** Human-readable description shown in Google Cloud Console
 
-    **`iam` (optional):** IAM permissions assigned to this Service Account as a *resource*. This defines which principal
-    can do something on this Service Account. An example: If you grant `roles/iam.serviceAccountKeyAdmin` to a group
-    here, this group will be able to maintain Service Account keys for this specific SA. If you want to allow this SA to
-    use BigQuery, you need to use the project-wide `roles` input or, even better, use the `project_roles` attribute to
-    do so.
+    **`iam_policy` (optional):** IAM permissions assigned to this service account as a *resource*. This defines which
+    principal can do something on this service account. An example: If you grant `roles/iam.serviceAccountKeyAdmin` to a
+    group here, this group will be able to maintain service account keys for this specific SA. If you want to allow this
+    SA to use BigQuery, you should use the `project_iam_policy_roles` attribute to do so. If your IAM binding requires a
+    condition, use the `iam_policy` input variable of this module while referencing the full name of your custom role.
 
-    **`project_roles` (optional):** IAM permissions assigned to this Service Account on *project level*.
-    This parameter is merged with whatever is provided as the project's IAM policy via the `roles` input.
+    **`iam_policy_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative
+    IAM policy of this service account with its current value as defined in the Google Cloud Platform. Can contain regex
+    patterns. Example use case: Composer 2 adds values to `roles/iam.workloadIdentityUser` binding when an environment is
+    created or updated. Thus, you might want to automatically import those permissions.
 
-    **`iam_non_authoritative_roles` (optional):** Any role given in this list will be added to the authoritative policy
-    with its current value as defined in the Google Cloud Platform. Example use case: Composer 2 adds values to
-    `roles/iam.workloadIdentityUser` binding when an environment is created or updated. Thus, you might want to
-    automatically import those permissions.
+    **`project_iam_policy_roles` (optional):** IAM permissions assigned to this service account on *project level*.
+    This parameter is merged with whatever is provided as the project's IAM policy via the `iam_policy` input variable.
 
-    **`runtime_service_accounts` (optional):** You can list Kubernetes Service Accounts within Cloud Native Runtime
+    **`runtime_service_accounts` (optional):** You can list Kubernetes service accounts within Cloud Native Runtime
     clusters here. For details on the format, see the example below. A Workload Identity Pool and a Workload Identity
     Provider needed for Workload Identity Federation will be created automatically. Each service account given gains
     permissions to authenticate as this service account using Workload Identity Federation. This allows workloads running
@@ -280,12 +362,12 @@ variable "service_accounts" {
     ```
       service_accounts = {
         runtime-sa = {
-          display_name  = "My Runtime Workload"
-          description   = "Workload running in Cloud Native Runtime Cluster"
+          display_name = "My Runtime Workload"
+          description  = "Workload running in Cloud Native Runtime Cluster"
 
           # Grant this service account to execute BigQuery jobs
           # access to certain datasets is configured in dataset IAM policy
-          project_roles = [
+          project_iam_policy_roles = [
             "roles/bigquery.jobUser"
           ]
           runtime_service_accounts = [
@@ -299,19 +381,22 @@ variable "service_accounts" {
         }
         deployments = {
           display_name  = "Deployments"
-          description   = "Service Account to deploy application"
+          description   = "Service account to deploy application"
 
           # Grant this service account Cloud Run Admin on project level
-          project_roles = [
+          project_iam_policy_roles = [
             "roles/run.admin"
           ]
 
-          # Allow specific group to create keys for this Service Account only
-          iam = {
-            "roles/iam.serviceAccountKeyAdmin" = [
-              "group:customer.project-role@cloudfoundation.metro.digital",
-            ]
-          }
+          # Allow specific group to impersonate this service account only
+          iam_policy = [
+            {
+              role    = "roles/iam.serviceAccountUser"
+              members = [
+                "group:customer.project-role@cloudfoundation.metro.digital",
+              ]
+            }
+          ]
 
           # This service account will be used by GitHub Action deployments in the given repository
           github_action_repositories = [
@@ -320,14 +405,12 @@ variable "service_accounts" {
         }
         bq-reader = {
           display_name = "BigQuery Reader"
-          description  = "Service Account for BigQuery Reader for App XYZ"
-          iam          = {} # No special Service Account resource IAM permissions
+          description  = "Service account for BigQuery Reader for App XYZ"
         }
         composer = {
-          display_name                = "Composer"
-          description                 = "Service Account to run Composer 2"
-          iam                         = {} # No special Service Account resource IAM permissions
-          iam_non_authoritative_roles = [
+          display_name                       = "Composer"
+          description                        = "Service account to run Composer 2"
+          iam_policy_non_authoritative_roles = [
             # maintained by Composer service automatically - imports any existing value
             "roles/iam.workloadIdentityUser"
           ]
@@ -338,12 +421,20 @@ variable "service_accounts" {
   EOD
 
   type = map(object({
-    display_name                = string
-    description                 = optional(string)
-    iam                         = optional(map(list(string)), {})
-    project_roles               = optional(list(string))
-    iam_non_authoritative_roles = optional(list(string))
-    github_action_repositories  = optional(list(string), [])
+    display_name = string
+    description  = optional(string)
+    iam_policy = optional(list(object({
+      role    = string
+      members = list(string)
+      condition = optional(object({
+        title       = string
+        expression  = string
+        description = optional(string, null)
+      }), null)
+    })), [])
+    iam_policy_non_authoritative_roles = optional(list(string), [])
+    project_iam_policy_roles           = optional(list(string), [])
+    github_action_repositories         = optional(list(string), [])
     runtime_service_accounts = optional(list(object({
       cluster_id      = string
       namespace       = string
@@ -352,22 +443,6 @@ variable "service_accounts" {
   }))
 
   default = {}
-}
-
-variable "non_authoritative_roles" {
-  description = <<-EOD
-    List of roles (regex) to exclude from authoritative project IAM handling.
-    Roles listed here can have bindings outside of this module.
-
-    Example:
-    ```
-    non_authoritative_roles = [
-      "roles/container.hostServiceAgentUser"
-    ]
-    ```
-  EOD
-  type        = list(string)
-  default     = []
 }
 
 variable "essential_contacts" {

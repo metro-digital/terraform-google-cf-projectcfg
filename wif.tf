@@ -32,15 +32,8 @@ locals {
   ]) : toset([])
 }
 
-# renamed in v2.2 - Can be removed with v3
-# Announce in a V3 release to upgrade to at least v2.2 first
-moved {
-  from = google_project_service.github_actions
-  to   = google_project_service.wif
-}
-
 resource "google_project_service" "wif" {
-  project  = data.google_project.project.project_id
+  project  = data.google_project.this.project_id
   for_each = local.wif_needed_services
   service  = each.key
 

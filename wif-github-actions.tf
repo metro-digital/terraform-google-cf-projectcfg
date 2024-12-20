@@ -31,14 +31,14 @@ locals {
 resource "google_iam_workload_identity_pool" "github_actions" {
   provider = google
   count    = local.github_actions_enabled
-  project  = data.google_project.project.project_id
+  project  = data.google_project.this.project_id
 
   workload_identity_pool_id = "github-actions"
   display_name              = "GitHub Actions"
-  description               = "Identity pool github actions pipelines"
+  description               = "Identity pool for GitHub Actions pipelines"
 
   depends_on = [
-    google_project_iam_binding.roles,
+    google_project_iam_policy.this,
     google_project_service.wif
   ]
 }
@@ -46,7 +46,7 @@ resource "google_iam_workload_identity_pool" "github_actions" {
 resource "google_iam_workload_identity_pool_provider" "github" {
   provider = google
   count    = local.github_actions_enabled
-  project  = data.google_project.project.project_id
+  project  = data.google_project.this.project_id
 
   workload_identity_pool_id          = google_iam_workload_identity_pool.github_actions[0].workload_identity_pool_id
   workload_identity_pool_provider_id = "github"

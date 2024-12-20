@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ---
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+
+default_stages:
+  - pre-commit
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # frozen: v5.0.0
@@ -22,22 +29,16 @@ repos:
       - id: mixed-line-ending
         args: ['--fix', 'lf']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: e0322737dccad136b751416f9e45d9980fe18435  # frozen: v1.96.2
+    rev: 55d0143972eec4905fdaea2f444f1e88218f9dce  # frozen: v1.96.3
     hooks:
       - id: terraform_fmt
-        exclude: ^/.+/$
       - id: terraform_tflint
-        exclude: ^/.+/$
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
-      - id: terraform_tfsec
-        exclude: ^/.+/$
-        args:
-          - --args=--config-file=__GIT_WORKING_DIR__/.tfsec/config.yml
       - id: terraform_docs
         args:
-          - --args=--config=.terraform-docs.yml
-  - repo: https://github.com/adrienverge/yamllint.git
+          - --args=--config=.terraform-docs.yaml
+  - repo: https://github.com/adrienverge/yamllint
     rev: 81e9f98ffd059efe8aa9c1b1a42e5cce61b640c6  # frozen: v1.35.1
     hooks:
       - id: yamllint
@@ -47,14 +48,24 @@ repos:
       - id: script-must-have-extension
       - id: shellcheck
       - id: shfmt
+  - repo: https://github.com/hukkin/mdformat
+    rev: e20b1ac5acb8aba0b49d3a9109c6e6b58684ee83  # frozen: 0.7.21
+    hooks:
+      - id: mdformat
+        # needed to support exclude in `.mdformat.toml`
+        # pre-commit runs on python 3.12 by default on MacOS and most linux distributions.
+        # Install python 3.13 if pre-commit fails.
+        language_version: "3.13"
+        # Optionally add plugins
+        additional_dependencies:
+          - mdformat-gfm
+          - mdformat-gfm-alerts
+          - mdformat-shfmt
+          - mdformat-toc
+          - mdformat-tables
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: 0acb67b29767c5e1b7d0eab3e557c29c1797b183  # frozen: v9.19.0
+    rev: a4288145006c83a91f59083ab813165ca05ad3f3  # frozen: v9.20.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
         additional_dependencies: ['@commitlint/config-conventional']
-  - repo: https://github.com/thlorenz/doctoc
-    rev: 70fdcd39ef919754011a827bd25f23a0b141c3c3  # frozen: v2.2.0
-    hooks:
-      - id: doctoc
-        args: ['--github', '--title', '## Table of Contents', '--update-only']
