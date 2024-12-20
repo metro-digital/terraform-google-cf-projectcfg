@@ -1,8 +1,6 @@
 # DEFAULT VPC
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-## Table of Contents
+<!-- mdformat-toc start --slug=github --no-anchors --maxlevel=6 --minlevel=2 -->
 
 - [General](#general)
 - [Supported regions](#supported-regions)
@@ -24,19 +22,19 @@
   - [fw-allow-ssh-iap](#fw-allow-ssh-iap)
   - [fw-allow-rdp-iap](#fw-allow-rdp-iap)
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+<!-- mdformat-toc end -->
 
 ## General
 
 The creation of a default VPC network is enabled by default and can be disabled
 via `skip_default_vpc_creation` input parameter.
 
-One of the main differences  to the default VPC created by Google is the
-network range used. Google uses ranges from `10.0.0.0/8` for the default VPC,
-as this prefix is used widely used within METROs internal network this module
-uses [RFC 1918] ip ranges from `172.16.0.0/12` for primary ranges. This should
-help users to easily separate VPCs with on-premise connectivity from those
-without. Secondary ranges are picked from the `10.0.0.0/8` range.
+One of the main differences to the default VPC created by Google is the network
+range used. Google uses ranges from `10.0.0.0/8` for the default VPC, as this
+prefix is used widely used within METROs internal network this module uses
+[RFC 1918] ip ranges from `172.16.0.0/12` for primary ranges. This should help
+users to easily separate VPCs with on-premise connectivity from those without.
+Secondary ranges are picked from the `10.0.0.0/8` range.
 
 ## Supported regions
 
@@ -57,9 +55,9 @@ The module aims to support all main regions within the European Union:
 
 ### Free to use IP address ranges in the default VPC
 
-When you want to create additional subnetworks or other network resources
-in the default VPC please take ranges from the ones listed here to avoid any
-further feature implemented inside the module conflicting with your resources.
+When you want to create additional subnetworks or other network resources in the
+default VPC please take ranges from the ones listed here to avoid any further
+feature implemented inside the module conflicting with your resources.
 
 #### 10.0.0.0/8 (10.0.0.0 - 10.255.255.255)
 
@@ -75,11 +73,11 @@ Please do not use `192.168.0.0/16`, consider it reserved for further use.
 
 ### Primary ranges
 
-For primary ranges we allocated `172.16.0.0/15`. Any region will use one
-a `/20` subrange from this block, allowing up to 32 regions.
+For primary ranges we allocated `172.16.0.0/15`. Any region will use one a `/20`
+subrange from this block, allowing up to 32 regions.
 
 | Region            | IP range        |
-| ----------------- |-----------------|
+| ----------------- | --------------- |
 | europe-west1      | 172.16.0.0/20   |
 | europe-west3      | 172.16.32.0/20  |
 | europe-west4      | 172.16.48.0/20  |
@@ -93,10 +91,10 @@ a `/20` subrange from this block, allowing up to 32 regions.
 
 #### GKE
 
-Each GKE clusters needs 1 secondary range for pods, and one for services.
-The module supports adding those secondary ranges to your subnetworks, but
-only supports one GKE cluster (one set of ranges). For secondary ranges from
-the 10.0.0.0/8 range are used.
+Each GKE clusters needs 1 secondary range for pods, and one for services. The
+module supports adding those secondary ranges to your subnetworks, but only
+supports one GKE cluster (one set of ranges). For secondary ranges from the
+10.0.0.0/8 range are used.
 
 ##### Services ranges
 
@@ -117,9 +115,9 @@ regions.
 
 ##### Pod ranges
 
-Each pod range is `/16` in size, resulting in 256 nodes with 28160 pods
-(110 pods per node) per GKE cluster. Reserved range for services is
-`10.32.0.0/11`, allowing up to 32 regions.
+Each pod range is `/16` in size, resulting in 256 nodes with 28160 pods (110
+pods per node) per GKE cluster. Reserved range for services is `10.32.0.0/11`,
+allowing up to 32 regions.
 
 | Region            | IP range     |
 | ----------------- | ------------ |
@@ -151,8 +149,8 @@ the `172.18.0.0/23` block, allowing up to 32 regions.
 ### Proxy only subnetworks
 
 [Proxy only subnets] are used for Envoy-based load balancers. We use
-`172.18.64.0/18` allowing 32 regions following Googles recommendation
-to use networks with a `/23` each.
+`172.18.64.0/18` allowing 32 regions following Googles recommendation to use
+networks with a `/23` each.
 
 | Region            | IP range       |
 | ----------------- | -------------- |
@@ -173,13 +171,13 @@ to use networks with a `/23` each.
 
 ## Preconfigured firewall rules
 
-The module can create some firewall rules depending on your configuration.
-For details how to enable/disable firewalls, see the `firewall_rules` input.
+The module can create some firewall rules depending on your configuration. For
+details how to enable/disable firewalls, see the `firewall_rules` input.
 
 ### fw-allow-all-internal
 
-This rule allows all traffic within the VPC. Each instance inside the VPC
-can communicate with every other system using any kind of protocol.
+This rule allows all traffic within the VPC. Each instance inside the VPC can
+communicate with every other system using any kind of protocol.
 
 **Applies to:** Every instance inside VPC
 
@@ -197,5 +195,5 @@ Identity-Aware Proxy
 
 **Applies to:** Every instance inside VPC with network tag `fw-allow-rdp-iap`
 
-[RFC 1918]: https://datatracker.ietf.org/doc/html/rfc1918
 [proxy only subnets]: https://cloud.google.com/load-balancing/docs/proxy-only-subnets
+[rfc 1918]: https://datatracker.ietf.org/doc/html/rfc1918

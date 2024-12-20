@@ -1,0 +1,6 @@
+wrap = 80
+validate = true
+exclude = [
+    "docs/TERRAFORM.md",
+    "docs/CHANGELOG.md"
+]

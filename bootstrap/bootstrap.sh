@@ -20,11 +20,12 @@ set -u
 # Helpers
 TEXT_BOLD="$(tput bold)"
 TEXT_COLOR_RED="$(tput setaf 1)"
+TEXT_COLOR_GREEN="$(tput setaf 2)"
 TEXT_COLOR_MAGENTA="$(tput setaf 5)"
 TEXT_ALL_OFF="$(tput sgr0)"
 
 function log_error() {
-	echo "${TEXT_BOLD}${TEXT_COLOR_RED}ERROR:${TEXT_ALL_OFF}${TEXT_COLOR_RED} ${1}${TEXT_ALL_OFF}" 2>&1 | fold -s -w 80
+	echo "${TEXT_BOLD}${TEXT_COLOR_RED}ERROR:${TEXT_ALL_OFF}${TEXT_COLOR_RED} ${1}${TEXT_ALL_OFF}"
 }
 
 function check_program() {
@@ -40,76 +41,32 @@ function print_usage_and_exit() {
 		Cloud Foundation Project Configuration Bootstrapper
 
 		Usage:
-		  $0 -p [GCP_PROJECT_ID]
+		  $0 -p [GCP_PROJECT_ID] [ADDITIONAL OPTIONS]
 
 		Options:
-		  -p (required) GCP Project ID
-		  -s (optional) Name of the service account that will be used to execute
-		                Terraform changes (default: terraform-iac-pipeline).
-		  -b (optional) Bucket name without 'gs://' which will store the Terraform
-		                state files (default: 'tf-state-<GCP_PROJECT_ID>').
-		  -o (optional) relative or absolute path to directory that will store the
-		                generated Terraform code (default: 'iac-output').
-		  -g (optional) GitHub repository in the format '<owner/org>/<reponame>'. If
-		                given, the Terraform code will be configured to enable the Workload
-		                Identity Federation support for GitHub Workflows. This is
-		                required for keyless authentication from GitHub Workflows which
-		                is strongly recommended. This can also be set up later.
-		  -t (optional) Time to sleep for in between bootstrap stages exectution,
-		      required for GCP IAM changes to propagate (default: '5m').
+		  -p <string> (required) GCP Project ID
+		  -s <string> (optional) Name of the service account that will be used to execute
+		                         Terraform changes (default: terraform-iac-pipeline).
+		  -b <string> (optional) Bucket name without 'gs://' which will store the Terraform
+		                         state files (default: 'tf-state-<GCP_PROJECT_ID>').
+		  -o <string> (optional) relative or absolute path to directory that will store the
+		                         generated Terraform code (default: 'iac-output').
+		  -g <string> (optional) GitHub repository in the format '<owner/org>/<reponame>'. If
+		                         given, the Terraform code will be configured to enable the Workload
+		                         Identity Federation support for GitHub Workflows. This is
+		                         required for keyless authentication from GitHub Workflows which
+		                         is strongly recommended. This can also be set up later.
+		  -t <string> (optional) Time to sleep for in between bootstrap stages execution,
+		                         required for GCP IAM changes to propagate (default: '5m').
+		  -i          (optional) Stop after initial creation of Service Account, bucket and permissions.
+		                         Bootstrap will still create write to output directory, but will
+		                         not apply any generated code.
 	END_OF_DOC
 	exit
 }
 
-function print_command_output_if_failure() {
-	EXITCODE=$?
-	cat <<-END_OF_ERROR
-		${TEXT_COLOR_RED}The bootstrap script encountered an error. Please check the command
-		output:${TEXT_ALL_OFF}
-		---
-		${COMMAND_OUTPUT}
-		---
-		If you are unsure about how to procced, feel free to reach out to the Cloud
-		Foundation team. Please also provide the command output from above!
-	END_OF_ERROR
-	exit $EXITCODE
-}
-
-function set_command_output_trap() {
-	trap print_command_output_if_failure INT TERM EXIT
-	clear_command_output_buffer
-}
-
-function reset_command_output_trap() {
-	trap - INT TERM EXIT
-	clear_command_output_buffer
-}
-
-function clear_command_output_buffer() {
-	COMMAND_OUTPUT=""
-}
-
-function gsutil_err_handling() {
-	cat <<-END_OF_ERROR
-		${TEXT_COLOR_RED}Caught unexpected output!${TEXT_ALL_OFF}
-		Please review the command output and fix the root cause:
-		==============================================
-		${1}"
-		==============================================
-
-	END_OF_ERROR
-	echo "You can hold this script on pause and fix the root cause in a separate terminal session"
-	echo "Or you can stop it here and rerun the script after the root cause is fixed."
-	read -p "Proceed (y/n)? " -n 1 -r
-	echo
-	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-		log_error "Aborted."
-		exit 1
-	fi
-}
-
 # Parameter parsing
-while getopts ":p:s:b:o:g::t:h" OPT; do
+while getopts ":p:s:b:o:g::t:hi" OPT; do
 	case $OPT in
 	p)
 		GCP_PROJECT_ID="${OPTARG}"
@@ -129,6 +86,9 @@ while getopts ":p:s:b:o:g::t:h" OPT; do
 	t)
 		TIME_SLEEP_PARAM="${OPTARG}"
 		;;
+	i)
+		INIT_ONLY_PARAM="yes"
+		;;
 	:)
 		log_error "Option -${OPTARG} requires an argument"
 		exit 1
@@ -144,18 +104,8 @@ while getopts ":p:s:b:o:g::t:h" OPT; do
 done
 
 check_program gcloud
-check_program gsutil
 check_program jq
-check_program find
-check_program realpath
 check_program terraform
-check_program openssl
-check_program xxd
-check_program fold
-check_program dig
-
-# Trim trailing .git from repositories
-GITHUB_REPOSITORY_PARAM="${GITHUB_REPOSITORY_PARAM%.git}"
 
 # parameter validation / defaulting
 SA_NAME="${SA_NAME_PARAM:-terraform-iac-pipeline}"
@@ -168,7 +118,9 @@ else
 fi
 
 if [ "${GITHUB_REPOSITORY_PARAM:-notset}" != "notset" ]; then
-	GITHUB_REPOSITORY_SA_BLOCK_STRING="github_action_repositories = [ \"${GITHUB_REPOSITORY_PARAM}\" ]"
+	# Trim trailing .git from repositories
+	GITHUB_REPOSITORY="${GITHUB_REPOSITORY_PARAM%.git}"
+	GITHUB_REPOSITORY_SA_BLOCK_STRING="github_action_repositories = [ \"${GITHUB_REPOSITORY}\" ]"
 	GITHUB_REPOSITORY_IAM_ROLE_STRING="\"roles/iam.workloadIdentityPoolAdmin\","
 else
 	GITHUB_REPOSITORY_SA_BLOCK_STRING=""
@@ -176,6 +128,7 @@ else
 fi
 
 TIME_SLEEP="${TIME_SLEEP_PARAM:-5m}"
+INIT_ONLY="${INIT_ONLY_PARAM:-no}"
 
 echo "Fetching project details..."
 # determinate active gcloud account
@@ -220,8 +173,6 @@ MANAGER_GROUP="${IAM_MANAGER_GROUP#group:}"
 DEVELOPER_GROUP="${IAM_DEVELOPER_GROUP#group:}"
 OBSERVER_GROUP="${IAM_OBSERVER_GROUP#group:}"
 
-OUTPUT_HINT=$(echo "The generated Terraform code will be written to '${OUTPUT_DIR}'." | fold -s -w 80)
-
 # all set - print details to user and ask to continue
 cat <<-EOF
 
@@ -243,7 +194,7 @@ cat <<-EOF
 	  * ${TEXT_BOLD}GCS Bucket:${TEXT_ALL_OFF}
 	      gs://$GCS_BUCKET
 
-	${OUTPUT_HINT}
+	The generated Terraform code will be written to '${OUTPUT_DIR}'.
 	${TEXT_BOLD}${TEXT_COLOR_MAGENTA}
 	The active account needs the project manager role inside the Cloud Foundation
 	Panel (or similar permissions). We assume that the permissions are granted to
@@ -251,9 +202,18 @@ cat <<-EOF
 	'${MANAGER_GROUP}'.${TEXT_ALL_OFF}
 	${TEXT_BOLD}
 	Please also check the guide for this script if you are unsure about how to use
-	it: https://confluence.metrosystems.net/x/rZOtG
+	it: https://metrodigital.atlassian.net/wiki/x/5gHMBw
 	${TEXT_ALL_OFF}
 EOF
+
+if [ "${INIT_ONLY}" = "yes" ]; then
+	cat <<-EOF
+		${TEXT_BOLD}${TEXT_COLOR_MAGENTA}Bootstrap will run in 'init-only mode', means it create the Service Account
+		and Bucket, generate the terraform code to output directory and then terminate
+		without applying the generated code.
+		${TEXT_ALL_OFF}
+	EOF
+fi
 
 read -p "Proceed (y/n)? " -n 1 -r
 echo
@@ -280,14 +240,14 @@ if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
 	fi
 	echo
 	if ! gcloud auth application-default login; then
-		log_error "Error occured during Application Default Credentials setup ... can't proceed"
+		log_error "Error occurred during Application Default Credentials setup ... can't proceed"
 		exit 1
 	fi
 	echo
 fi
 
 if [[ ! -d "${OUTPUT_DIR}" ]]; then
-	read -p "$(echo "Output directory '${OUTPUT_DIR}' does not exist. Create it (y/n)? " | fold -s -w 80)" -n 1 -r
+	read -p "Output directory '${OUTPUT_DIR}' does not exist. Create it (y/n)? " -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]]; then
 		echo "Creating '${OUTPUT_DIR}'"
@@ -301,10 +261,25 @@ if [[ ! -d "${OUTPUT_DIR}" ]]; then
 	fi
 else
 	if [ "$(ls -A "${OUTPUT_DIR}")" ]; then
-		read -p "$(echo "Output directory '${OUTPUT_DIR}' is not empty. Continue anyway (y/n)? " | fold -s -w 80)" -n 1 -r
+		cat <<-EOF
+			${TEXT_BOLD}Warning: Output directory '${OUTPUT_DIR}' is not empty!${TEXT_ALL_OFF}
+			This can cause issues if it contains terraform configuration or cache.
+			${TEXT_BOLD}${TEXT_COLOR_RED}   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+			The bootstrap script will recursively delete the existing directory.
+			${TEXT_ALL_OFF}
+		EOF
+		read -p "Continue (y/n)? " -n 1 -r
 		echo
 		if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 			log_error "Aborted."
+			exit 1
+		fi
+		if ! rm -R -f "${OUTPUT_DIR}"; then
+			log_error "Could not delete existing output directory... can't proceed"
+			exit 1
+		fi
+		if ! mkdir -p "${OUTPUT_DIR}"; then
+			log_error "Could not create output directory... can't proceed"
 			exit 1
 		fi
 	fi
@@ -318,43 +293,81 @@ export TF_DATA_DIR=".terraform-${GCP_PROJECT_ID}"
 # also use the project ID as workspace for the same reason
 export TF_WORKSPACE="${GCP_PROJECT_ID}"
 
-echo "Starting first stage terraform init." | fold -s -w 80
+cat <<-EOF >"terraform/generated-${GCP_PROJECT_ID}.tfvars"
+	project="${GCP_PROJECT_ID}"
+	manager_group="${MANAGER_GROUP}"
+	developer_group="${DEVELOPER_GROUP}"
+	observer_group="${OBSERVER_GROUP}"
+	terraform_sa_name="${SA_NAME}"
+	terraform_state_bucket="${GCS_BUCKET}"
+	github_repository_iam_role_string="${GITHUB_REPOSITORY_IAM_ROLE_STRING}"
+	github_repository_sa_block_string="${GITHUB_REPOSITORY_SA_BLOCK_STRING}"
+	time_sleep="${TIME_SLEEP}"
+	output_dir="${OUTPUT_DIR}"
+EOF
 
+echo "Starting first stage terraform init."
 terraform -chdir=terraform init
 
-echo "Starting first stage terraform apply." | fold -s -w 80
+echo "Running import commands for Service Account and Bucket."
+terraform -chdir=terraform import \
+	-var-file="generated-${GCP_PROJECT_ID}.tfvars" \
+	google_storage_bucket.this \
+	"${GCP_PROJECT_ID}/${GCS_BUCKET}" ||
+	echo "${TEXT_BOLD}${TEXT_COLOR_GREEN}Import failed, expected!${TEXT_ALL_OFF}"
 
+terraform -chdir=terraform import \
+	-var-file="generated-${GCP_PROJECT_ID}.tfvars" \
+	google_service_account.this \
+	"projects/${GCP_PROJECT_ID}/serviceAccounts/${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com" ||
+	echo "${TEXT_BOLD}${TEXT_COLOR_GREEN}Import failed, expected!${TEXT_ALL_OFF}"
+
+echo "Starting first stage terraform apply."
 terraform -chdir=terraform apply -auto-approve \
-	-var="project=${GCP_PROJECT_ID}" \
-	-var="manager_group=${MANAGER_GROUP}" \
-	-var="developer_group=${DEVELOPER_GROUP}" \
-	-var="observer_group=${OBSERVER_GROUP}" \
-	-var="terraform_sa_name=${SA_NAME}" \
-	-var="terraform_state_bucket=${GCS_BUCKET}" \
-	-var="github_repository_iam_role_string=${GITHUB_REPOSITORY_IAM_ROLE_STRING}" \
-	-var="github_repository_sa_block_string=${GITHUB_REPOSITORY_SA_BLOCK_STRING}" \
-	-var="time_sleep=${TIME_SLEEP}" \
-	-var="output_dir=${OUTPUT_DIR}"
+	-var-file="generated-${GCP_PROJECT_ID}.tfvars"
 
-echo "Finished first stage terraform apply." | fold -s -w 80
+echo "Finished first stage terraform apply."
 
 # Unset TF_DATA_DIR to fall back to normal .terraform folder
 unset TF_DATA_DIR
 # also unset the workspace as we now operate on the bootstrap code that doesnt know about workspaces
 unset TF_WORKSPACE
 
-echo "Starting second stage terraform init with state migration using generated code." | fold -s -w 80
+if [ "${INIT_ONLY}" = "yes" ]; then
+	cat <<-EOF
+		${TEXT_BOLD}${TEXT_COLOR_RED}
+		Bootstrap in 'init-only mode', not applying the generated terraform code!${TEXT_ALL_OFF}
+
+		The script would have executed the following command to ensure the state
+		moved to the generated Google Cloud Storage bucket:
+
+		terraform -chdir="${OUTPUT_DIR}" init -migrate-state
+
+		And then apply the generated code:
+
+		terraform -chdir="${OUTPUT_DIR}" apply
+	EOF
+	exit 0
+fi
+
+echo "Starting second stage terraform init with state migration using generated code."
 
 terraform -chdir="${OUTPUT_DIR}" init -migrate-state
 
-echo "Finished second stage terraform init with state migration using generated code." | fold -s -w 80
+echo "Finished second stage terraform init with state migration using generated code."
 
-echo "Starting second stage terraform apply using generated code." | fold -s -w 80
+echo "Starting second stage terraform apply using generated code."
 
-terraform -chdir="${OUTPUT_DIR}" apply -auto-approve
+terraform -chdir="${OUTPUT_DIR}" apply
 
-echo "Finished second stage terraform apply using generated code." | fold -s -w 80
+cat <<-EOF
+	${TEXT_BOLD}${TEXT_COLOR_GREEN}
+	Finished second stage terraform apply using generated code.
+	${TEXT_ALL_OFF}
+	Your project bootstrapping is completed! Copy the contents of ${OUTPUT_DIR}
+	into a Git repository (if it isn't already part of one) and commit them.
 
-echo "Your project bootstrapping is completed! Copy the contents of ${OUTPUT_DIR} into a Git repository (if it isn't already part of one) and commit them. See https://confluence.metrosystems.net/x/XJKtG for more information about Infrastructure as Code (e.g. how to automate its rollout using GitHub Workflows)." | fold -s -w 80
-
-echo "On consecutive executions you will see roles being added and then removed to the manager group between the first and second stages. THIS IS NORMAL. DON'T PANIC." | fold -s -w 80
+	See https://metrodigital.atlassian.net/wiki/x/SwLMBw for more information
+	about Infrastructure as Code (e.g. how to automate its rollout
+	using GitHub Workflows).
+EOF

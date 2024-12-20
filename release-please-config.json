@@ -4,6 +4,7 @@
   "draft-pull-request": true,
   "include-v-in-tag": true,
   "changelog-type": "default",
+  "changelog-path": "docs/CHANGELOG.md",
   "packages": {
     ".": {
       "extra-files": [

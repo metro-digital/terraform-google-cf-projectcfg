@@ -12,18 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-output "project_id" {
-  description = "GCP project ID"
-  value       = data.google_project.this.project_id
-}
+resource "google_project_iam_custom_role" "custom_roles" {
+  provider = google
+  for_each = var.custom_roles
 
-output "service_accounts" {
-  description = "List of service accounts created"
-  value = {
-    for name, data in google_service_account.service_accounts : name => data.email
-  }
-
-  depends_on = [
-    google_service_account.service_accounts
-  ]
+  project     = data.google_project.this.project_id
+  role_id     = each.key
+  title       = each.value.title
+  description = each.value.description
+  permissions = each.value.permissions
 }

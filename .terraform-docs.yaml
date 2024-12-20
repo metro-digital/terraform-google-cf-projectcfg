@@ -13,6 +13,8 @@
 # limitations under the License.
 ---
 formatter: markdown table
+output:
+  file: ./docs/TERRAFORM.md
 sections:
   hide-all: true
   show:

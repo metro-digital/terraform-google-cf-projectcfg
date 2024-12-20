@@ -16,7 +16,7 @@ locals {
   # manager_group_iam_roles is a list of GCP IAM roles required for
   # the members of manager_group to have the privileges allowing
   # execution of the bootstrapping step as users, without the
-  # Terraform service account impersionation.
+  # Terraform service account impersonation.
   manager_group_iam_roles = [
     "roles/iam.serviceAccountAdmin",
     "roles/serviceusage.serviceUsageAdmin",
@@ -40,12 +40,13 @@ locals {
   terraform_service_account_iam_roles = [
     "roles/compute.networkAdmin",
     "roles/compute.securityAdmin",
+    "roles/dns.admin",
+    "roles/iam.roleAdmin",
+    "roles/iam.securityAdmin",
+    "roles/iam.serviceAccountAdmin",
+    "roles/serviceusage.serviceUsageAdmin",
     "roles/storage.admin",
     "roles/storage.objectAdmin",
-    "roles/iam.serviceAccountAdmin",
-    "roles/iam.securityAdmin",
-    "roles/iam.roleAdmin",
-    "roles/serviceusage.serviceUsageAdmin",
   ]
 
   # identity_service_account_iam_roles is a list of GCP IAM roles
