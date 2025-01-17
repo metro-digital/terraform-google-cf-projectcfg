@@ -84,7 +84,8 @@ variable "skip_default_vpc_dns_logging_policy" {
     to implement your own policy for further adjustments.
   EOD
   type        = bool
-  default     = true
+  default     = false
+  nullable    = false
 }
 
 variable "firewall_rules" {
