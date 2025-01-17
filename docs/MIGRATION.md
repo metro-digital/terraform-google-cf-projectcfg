@@ -12,8 +12,18 @@
       - [`service_accounts.iam_non_authoritative_roles` => `service_accounts.iam_policy_non_authoritative_roles`](#service_accountsiam_non_authoritative_roles--service_accountsiam_policy_non_authoritative_roles)
       - [`service_accounts.project_roles` => `service_accounts.project_iam_policy_roles`](#service_accountsproject_roles--service_accountsproject_iam_policy_roles)
     - [De-Privilege Compute Engine Default Service Account](#de-privilege-compute-engine-default-service-account)
-  - [Network-Related Changes](#network-related-changes)
+  - [Compute/Network-Related Changes](#computenetwork-related-changes)
+    - [Changes to Input Variables and Attributes](#changes-to-input-variables-and-attributes-1)
+      - [`vpc_regions[<REGION>].nat` => `vpc_regions[<REGION>].nat.num_ips`](#vpc_regionsregionnat--vpc_regionsregionnatnum_ips)
+      - [`vpc_regions[<REGION>].nat_min_ports_per_vm` => `vpc_regions[<REGION>].nat.min_port_per_vm`](#vpc_regionsregionnat_min_ports_per_vm--vpc_regionsregionnatmin_port_per_vm)
+      - [`vpc_regions[<REGION>].vpcaccess` => `vpc_regions[<REGION>].serverless_vpc_access`](#vpc_regionsregionvpcaccess--vpc_regionsregionserverless_vpc_access)
+    - [Default VPC Creation](#default-vpc-creation)
+    - [Automatic API Enabling](#automatic-api-enabling)
+    - [`enabled_services_disable_on_destroy` Changed Default Behaviour](#enabled_services_disable_on_destroy-changed-default-behaviour)
+    - [DNS Policy](#dns-policy)
     - [Firewall Rules](#firewall-rules)
+  - [Outputs](#outputs)
+    - [Changes for `service_accounts`](#changes-for-service_accounts)
 
 <!-- mdformat-toc end -->
 
@@ -49,7 +59,8 @@ upgrade to the `v3` release of the module:
      version = "~> 3.0"
 
      project_id = "cf-example-project"
-     ...
+     # ...
+   }
    ```
 
    This change also ensures that you automatically receive updates for all
@@ -64,9 +75,20 @@ upgrade to the `v3` release of the module:
 1. **Perform all the required changes** as outlined below if they affect your
    usage of the module.
 
-1. Import the current IAM policy of your Google Cloud project as outlined
-   [here][faq-iam-policy-import]. This makes it easier to understand the actual
-   changes performed in the next two steps.
+1. It's recommended to import the project's existing IAM policy into the state.
+   This will allow you to see a potential diff on the project level IAM policy
+   in the next step. If you do not import the existing policy, due to the
+   underlying implementation in the Google provider and Terraform itself,
+   Terraform will assume to create this IAM policy, and therefore will just show
+   it as resource that should be created.
+
+   ```shell
+   terraform import module.projectcfg.google_project_iam_policy.this <your project id>
+   ```
+
+   The import command above assumes that your module's identifier is
+   `projectcfg`, as outlined in the example in step 1. If your identifier is
+   different, you need to adjust the commend accordingly.
 
 1. Run `terraform plan` to see all changes. **Carefully review them!** You will
    see that some resources will be removed (e.g. no longer compliant firewall
@@ -203,28 +225,293 @@ compliant with Cloud Policies:
 - To set up a service account on an existing VM, see
   [Change the attached service account][vm-update-user-sa].
 
-### Network-Related Changes
+### Compute/Network-Related Changes
+
+#### Changes to Input Variables and Attributes
+
+##### `vpc_regions[<REGION>].nat` => `vpc_regions[<REGION>].nat.num_ips`
+
+The NAT configuration of a VPC is now bundled under the `nat` attribute of the
+`vpc_regions` input variable. For more details on how this change affects you,
+see [the section on the default VPC creation](#default-vpc-creation).
+
+##### `vpc_regions[<REGION>].nat_min_ports_per_vm` => `vpc_regions[<REGION>].nat.min_port_per_vm`
+
+The NAT configuration of a VPC is now bundled under the `nat` attribute of the
+`vpc_regions` input variable.
+
+##### `vpc_regions[<REGION>].vpcaccess` => `vpc_regions[<REGION>].serverless_vpc_access`
+
+The attribute `vpcaccess` was renamed to `serverless_vpc_access` to better
+reflect the official Google Cloud product name. Additionally, the type of the
+attribute changed from a boolean (to disable/enable the feature) to a map allows
+you to configure the feature.
+
+**Old Configuration Syntax to Disable the Serverless VPC Access**
+
+```hcl
+vpc_regions = {
+  europe-west1 = {
+    vpcaccess = false
+  }
+}
+```
+
+**New Configuration Syntax to Disable the Serverless VPC Access**
+
+```hcl
+vpc_regions = {
+  europe-west1 = {
+    # Not specifying `serverless_vpc_access` or explicitly setting the
+    # attribute to `null` disables the feature in the subnet of this region.
+  }
+}
+```
+
+**Old Configuration Syntax to Enable the Serverless VPC Access**
+
+```hcl
+vpc_regions = {
+  europe-west1 = {
+    vpcaccess = true
+  }
+}
+```
+
+**New Configuration Syntax to Enable the Serverless VPC Access**
+
+```hcl
+vpc_regions = {
+  europe-west1 = {
+    # Creates a Serverless VPC Access Connector with the default, minimal
+    # configuration.
+    serverless_vpc_access = {}
+  }
+}
+```
+
+#### Default VPC Creation
+
+> [!CAUTION]
+> If you don't specify any VPC configuration in the `vpc_regions` input
+> variable, the module will no longer provision the default VPC and **delete any
+> previously provisioned one**.
+
+To mitigate this, ensure to correctly configure the `vpc_regions` input variable
+according to your needs. If you never used the provisioned default VPC, you
+don't need to modify the variable and the next apply will delete the default
+VPC. You should still read the section on
+[the automatic API enabling](#automatic-api-enabling) and
+[the updated `enabled_services_disable_on_destroy` behaviour](#enabled_services_disable_on_destroy-changed-default-behaviour)!
+
+Every region which is listed in the `vpc_regions` input variable, now also
+receives a NAT gateway with automatic IP address allocation and proxy-only
+subnetworks for load balancers.
+
+The previous default behaviour was to always create a VPC and subnetwork in
+`europe-west1`.
+
+- If you want to continue provisioning a default subnetwork in `europe-west1`
+  **without any NAT gateway**, configure the following `vpc_regions` input
+  variable:
+
+  ```hcl
+  vpc_regions = {
+    europe-west1 = {
+      nat = {
+        mode = "DISABLED"
+      }
+    }
+  }
+  ```
+
+- If you want to continue provisioning a default subnetwork in `europe-west1`
+  **with a NAT gateway with one static IP**, configure the following
+  `vpc_regions` input variable:
+
+  ```hcl
+  vpc_regions = {
+    europe-west1 = {
+      nat = {
+        mode    = "MANUAL"
+        num_ips = 1
+      }
+    }
+  }
+  ```
+
+- If you want to continue provisioning a default subnetwork in `europe-west1`
+  **with a default NAT gateway with automatic IP address allocation**, configure
+  the following `vpc_regions` input variable:
+
+  ```hcl
+  vpc_regions = {
+    europe-west1 = {
+      # Not specifying the `nat` attribute (which effectively sets it to an
+      # empty map) or manually setting it to `{}` configures the NAT gateway to
+      # use automatic IP address allocation.
+    }
+  }
+  ```
+
+- If you want to continue provisioning a default subnetwork in `europe-west1`
+  **with a customised NAT gateway with automatic IP address allocation**,
+  configure the following `vpc_regions` input variable:
+
+  ```hcl
+  vpc_regions = {
+    europe-west1 = {
+      nat = {
+        min_port_per_vm = 128 # An example tuning of the NAT gateway.
+      }
+    }
+  }
+  ```
+
+Unless you have a good reason for using static NAT gateway IP addresses (e.g.
+because you need to allowlist your internet-facing IP address in external
+systems), we generally recommend you to switch to use automatic IP address
+allocation which allows your NAT gateway to scale better.
+
+We generally recommend you migrate your existing setup first, apply the migrated
+code and only then change your configuration to deploy a NAT gateway using
+automatic IP address allocation if you plan to use the new automatic IP address
+allocation. This will make it easier to understand the diff produced by
+Terraform during the v2 -> v3 migration step.
+
+#### Automatic API Enabling
+
+In the previous release, the following Compute Engine-related services were
+always enabled in the project managed by the module regardless of whether or not
+you created the default VPC using the module:
+
+- `compute.googleapis.com`
+- `dns.googleapis.com`
+- `iap.googleapis.com`
+
+In this release, Compute Engine-related services are no longer enabled by
+default when you don't provision a default VPC using the module.
+
+If you relied on the silent enabling of Compute Engine-related services, don't
+plan to continue using the default VPC provisioned by the module and still need
+the Compute Engine-related services to be enabled, make sure to list all the
+services that you require in the `enabled_services` input variable of the
+module.
+
+To completely restore the previous behaviour, include the previously
+automatically enabled service in the `enabled_services` input variable:
+
+```hcl
+enabled_services = [
+  "compute.googleapis.com",
+  "dns.googleapis.com",
+  "iap.googleapis.com",
+  # ...
+]
+```
+
+#### `enabled_services_disable_on_destroy` Changed Default Behaviour
+
+Services which are enabled via the module are no longer disabled by default when
+they are no longer listed in the `enabled_services` input of the module. You can
+set the `enabled_services_disable_on_destroy` input variable to `true` to
+preserve the behaviour of the previous module version.
+
+This change only becomes effective after the first apply. The first apply after
+upgrading to v3 will still be processed by Terraform using the previous default
+of disabling services in Google Cloud that are no longer listed. This can cause
+a problem in connection with
+[the network-related changes](#compute-network-related-changes). See this
+section for more information about the recommended mitigation steps.
+
+#### DNS Policy
+
+The module creates a DNS logging policy to be compliant wit latest Cloud
+Policies. Therefore, your IaC Account needs the `roles/dns.admin` role on
+project level. Please ensure to grant the required role to the service account
+used to run the Terraform code against your infrastructure.
 
 #### Firewall Rules
 
 > [!CAUTION]
-> All firewall rules related to public ingress were removed to be compliant with
-> the latest Cloud Policies.
+> **For compliance with the latest Cloud Policies, certain firewall rules were
+> removed:**
+>
+> - All firewall rules related to public ingress:
+>
+>   The removed firewall rules include IP ranges for networks which are
+>   generally owned by METRO but should not automatically be considered trusted.
+>   If you need such firewalls, you can still create similar ones. Ensure you
+>   are compliant with the latest Cloud Policies.
+>
+> - The firewall rule allowing all traffic within the VPC:
+>
+>   If you require traffic to be passed between different Compute Engine
+>   instances, regardless of their subnetwork, you should create specific
+>   firewall rules allowing this traffic based on a network tag or preferably
+>   the service account of the respective workload.
 
-The removed firewall rules include IP ranges for networks which are generally
-owned by METRO but should not automatically be considered trusted. If you need
-such firewalls, you can still create similar ones. Ensure you are compliant with
-the latest Cloud Policies.
+To simplify firewall rule creation, IP address ranges and other details of the
+generated VPC are available in the [`vpc` output][terraform-outputs].
 
 Additionally, support for fine-grained configuration of created firewall rules
-was added. See the `firewall_rules` [input variable](./TERRAFORM.md#inputs).
+was added. See the [`firewall_rules` input variable][terraform-inputs].
+
+### Outputs
+
+#### Changes for `service_accounts`
+
+The [`service_accounts` output][terraform-outputs] was adjusted to return more
+details about the created service accounts. The `key` remains unchanged, but the
+value now contains attributes of the created service account:
+
+- email: The e-mail address of the service account.
+- id: An identifier for the resource in the format
+  `projects/{{project}}/serviceAccounts/{{email}}`.
+- member: The identity of the service account in the form
+  `serviceAccount:{email}`. This value is often used to refer to the service
+  account when granting IAM permissions.
+- unique_id: The unique ID of the service account.
+
+If you used the output to reference the created service account, for example to
+assign permissions to it on resources created outside of the module, you need to
+update your Terraform code.
+
+**Old Usage of Output Within an IAM Policy**
+
+```hcl
+data "google_iam_policy" "admin" {
+  binding {
+    role = "roles/compute.instanceAdmin"
+
+    members = [
+      "serviceAccount:${module.projectcfg.service_accounts["terraform-iac-pipeline"]}",
+    ]
+  }
+}
+```
+
+**Updated Usage of Output Within an IAM Policy**
+
+```hcl
+data "google_iam_policy" "admin" {
+  binding {
+    role = "roles/compute.instanceAdmin"
+
+    members = [
+      module.projectcfg.service_accounts["terraform-iac-pipeline"].member,
+    ]
+  }
+}
+```
 
 [changelog]: CHANGELOG.md
 [compute engine default service account]: https://cloud.google.com/compute/docs/access/service-accounts#default_service_account
-[faq-iam-policy-import]: FAQ.md#how-to-import-existing-iam-policy
 [faq-versioning]: FAQ.md#versioning
 [latest-v2-release]: https://github.com/metro-digital/terraform-google-cf-projectcfg/releases?q=v2&expanded=false
 [support]: https://metrodigital.atlassian.net/wiki/x/BwLMBw
+[terraform-inputs]: TERRAFORM.md#inputs
+[terraform-outputs]: TERRAFORM.md#outputs
 [version constraint]: https://developer.hashicorp.com/terraform/language/expressions/version-constraints
 [vm-create-user-sa]: https://cloud.google.com/compute/docs/access/create-enable-service-accounts-for-instances
 [vm-update-user-sa]: https://cloud.google.com/compute/docs/instances/change-service-account

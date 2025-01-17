@@ -25,7 +25,7 @@ TEXT_COLOR_MAGENTA="$(tput setaf 5)"
 TEXT_ALL_OFF="$(tput sgr0)"
 
 function log_error() {
-	echo "${TEXT_BOLD}${TEXT_COLOR_RED}ERROR:${TEXT_ALL_OFF}${TEXT_COLOR_RED} ${1}${TEXT_ALL_OFF}"
+	echo "${TEXT_BOLD}${TEXT_COLOR_RED}ERROR:${TEXT_ALL_OFF} ${1}${TEXT_ALL_OFF}"
 }
 
 function check_program() {
@@ -66,7 +66,7 @@ function print_usage_and_exit() {
 }
 
 # Parameter parsing
-while getopts ":p:s:b:o:g::t:hi" OPT; do
+while getopts ":p:s:b:l:o:g::t:hi" OPT; do
 	case $OPT in
 	p)
 		GCP_PROJECT_ID="${OPTARG}"
@@ -76,6 +76,9 @@ while getopts ":p:s:b:o:g::t:hi" OPT; do
 		;;
 	b)
 		GCS_BUCKET_PARAM="${OPTARG}"
+		;;
+	l)
+		GCS_BUCKET_LOCATION_PARAM="${OPTARG}"
 		;;
 	o)
 		OUTPUT_DIR_PARAM="${OPTARG}"
@@ -143,20 +146,44 @@ if [ "${GCP_PROJECT_ID:-notset}" = "notset" ]; then
 	log_error "Missing GCP_PROJECT_ID! Make sure the '-p' parameter is correctly set." 1>&2
 	exit 1
 else
-	GCP_PROJECT_NAME="$(gcloud projects describe "${GCP_PROJECT_ID}" --format='value(name)')"
-	if [ "${GCP_PROJECT_NAME}" = "" ]; then
+	PROJECT_DATA=$(gcloud projects describe "${GCP_PROJECT_ID}" --format 'json' || true)
+	if [ "${PROJECT_DATA}" = "" ]; then
 		log_error "Unable to find a project with the given project ID '${GCP_PROJECT_ID}'!"
-		log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role (or a role with comparable permissions) assigned to this account inside the project?"
+		log_error "Please check:"
+		log_error " - Is the project ID correct?"
+		log_error " - Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role assigned to this account inside the project?"
 		exit 1
 	fi
-fi
 
-#Getting project number
-GCP_PROJECT_NUMBER="$(gcloud projects describe "${GCP_PROJECT_ID}" --format='value(project_number)')"
-if [ "${GCP_PROJECT_NUMBER}" = "" ]; then
-	log_error "Unable to determine a project number with the given project ID '${GCP_PROJECT_ID}'!"
-	log_error "Your active gcloud CLI account is '${ACTIVE_GCLOUD_ACCOUNT}'. Is the manager role (or a role with comparable permissions) assigned to this account inside the project?"
-	exit 1
+	VARIABLES_EXTRACTED=$(echo "${PROJECT_DATA}" | jq -r '@sh "GCP_PROJECT_NAME=\(.name) GCP_PROJECT_NUMBER=\(.projectNumber) GCP_PROJECT_LIFECYCLE=\(.lifecycleState) GCP_PROJECT_LANDING_ZONE=\(.labels.cf_landing_zone)"')
+	eval "${VARIABLES_EXTRACTED}"
+
+	if [ "${GCP_PROJECT_LIFECYCLE}" != "ACTIVE" ]; then
+		log_error "Invalid '${GCP_PROJECT_ID}'! Given project is in lifecycle state '${GCP_PROJECT_LIFECYCLE}' - expected 'ACTIVE'"
+		exit 1
+	fi
+
+	if [ "${GCP_PROJECT_LANDING_ZONE}" = "null" ]; then
+		log_error "Invalid '${GCP_PROJECT_ID}'! Label 'cf_landing_zone' - does not exists. Is this a Cloud Foundation project?"
+		exit 1
+	fi
+
+	if [ "${GCS_BUCKET_LOCATION_PARAM:-notset}" = "notset" ]; then
+		case $GCP_PROJECT_LANDING_ZONE in
+		"applications_non-prod_eu" | "applications_prod_eu")
+			GCS_BUCKET_LOCATION="EU"
+			;;
+		"applications_non-prod_asia" | "applications_prod_asia")
+			GCS_BUCKET_LOCATION="ASIA"
+			;;
+		*)
+			log_error "Landing zone '${GCP_PROJECT_LANDING_ZONE}' is unknown. Please reach out to the Cloud Foundation team to report this error."
+			exit 1
+			;;
+		esac
+	else
+		GCS_BUCKET_LOCATION="${GCS_BUCKET_LOCATION_PARAM}"
+	fi
 fi
 
 # try to find Cloud Foundation Panel groups in IAM permissions
@@ -187,12 +214,13 @@ cat <<-EOF
 	${TEXT_BOLD}Detected manager group:${TEXT_ALL_OFF} ${MANAGER_GROUP}
 	${TEXT_BOLD}Detected developer group:${TEXT_ALL_OFF} ${DEVELOPER_GROUP}
 	${TEXT_BOLD}Detected observer group:${TEXT_ALL_OFF} ${OBSERVER_GROUP}
+	${TEXT_BOLD}Detected landing zone:${TEXT_ALL_OFF} ${GCP_PROJECT_LANDING_ZONE}
 
-	The following ressources will be created (if they don't already exist):
+	The following resources will be created (if they don't already exist):
 	  * ${TEXT_BOLD}Service Account:${TEXT_ALL_OFF}
 	      ${SA_NAME}@${GCP_PROJECT_ID}.iam.gserviceaccount.com
 	  * ${TEXT_BOLD}GCS Bucket:${TEXT_ALL_OFF}
-	      gs://$GCS_BUCKET
+	      gs://$GCS_BUCKET - Location: '${GCS_BUCKET_LOCATION}'
 
 	The generated Terraform code will be written to '${OUTPUT_DIR}'.
 	${TEXT_BOLD}${TEXT_COLOR_MAGENTA}
@@ -300,6 +328,7 @@ cat <<-EOF >"terraform/generated-${GCP_PROJECT_ID}.tfvars"
 	observer_group="${OBSERVER_GROUP}"
 	terraform_sa_name="${SA_NAME}"
 	terraform_state_bucket="${GCS_BUCKET}"
+	terraform_state_bucket_location="${GCS_BUCKET_LOCATION}"
 	github_repository_iam_role_string="${GITHUB_REPOSITORY_IAM_ROLE_STRING}"
 	github_repository_sa_block_string="${GITHUB_REPOSITORY_SA_BLOCK_STRING}"
 	time_sleep="${TIME_SLEEP}"

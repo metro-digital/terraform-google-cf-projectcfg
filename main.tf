@@ -33,6 +33,18 @@ data "google_project" "this" {
     }
 
     postcondition {
+      condition     = contains(keys(local.env_group_domain), self.labels["cf_mesh_env"])
+      error_message = <<-EOE
+        Unknown enviroment set in label 'cf_mesh_env' on project '${self.project_id}'!
+
+        Currently known enviroments:
+          ${indent(2, join("\n", formatlist("- %s", keys(local.env_group_domain))))}
+
+        Please reach out to the Cloud Foundation team to report this error.
+      EOE
+    }
+
+    postcondition {
       condition     = contains(keys(self.labels), "cf_customer_id")
       error_message = <<-EOE
         Missing label 'cf_customer_id' on project '${self.project_id}'!
@@ -59,12 +71,25 @@ data "google_project" "this" {
     }
 
     postcondition {
-      condition     = contains(keys(local.env_group_domain), self.labels["cf_mesh_env"])
+      condition     = contains(keys(self.labels), "cf_landing_zone")
       error_message = <<-EOE
-        Unknown enviroment set in label 'cf_mesh_env' on project '${self.project_id}'!
+        Missing label 'cf_landing_zone' on project '${self.project_id}'!
 
-        Currently known enviroments:
-          ${indent(2, join("\n", formatlist("- %s", keys(local.env_group_domain))))}
+        Currently configured labels:
+          ${indent(2, join("\n", formatlist("- %s", keys(self.labels))))}
+
+        This module only works with Google Projects managed within the
+        Cloud Foundation panel.
+      EOE
+    }
+
+    postcondition {
+      condition     = contains(keys(local.landing_zone_regions), self.labels["cf_landing_zone"])
+      error_message = <<-EOE
+        Unknown landing-zone set in label 'cf_landing_zone' on project '${self.project_id}'!
+
+        Currently known landing zone:
+          ${indent(2, join("\n", formatlist("- %s", keys(local.landing_zone_regions))))}
 
         Please reach out to the Cloud Foundation team to report this error.
       EOE

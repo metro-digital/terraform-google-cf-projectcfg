@@ -20,6 +20,42 @@ locals {
   }
   group_domain = local.env_group_domain[data.google_project.this.labels["cf_mesh_env"]]
 
+  region_sets = {
+    eu = [
+      "europe-central2",
+      "europe-north1",
+      "europe-southwest1",
+      "europe-west1",
+      "europe-west3",
+      "europe-west4",
+      "europe-west8",
+      "europe-west9",
+      "europe-west10",
+      "europe-west12",
+    ]
+    asia = [
+      "asia-east1",
+      "asia-east2",
+      "asia-northeast1",
+      "asia-northeast2",
+      "asia-northeast3",
+      "asia-south1",
+      "asia-south2",
+      "asia-southeast1",
+      "asia-southeast2",
+      "me-central1",
+      "me-central2",
+      "me-west1",
+    ]
+  }
+
+  landing_zone_regions = {
+    applications_non-prod_eu   = local.region_sets.eu
+    applications_prod_eu       = local.region_sets.eu
+    applications_non-prod_asia = local.region_sets.asia
+    applications_prod_asia     = local.region_sets.asia
+  }
+
   observer_group = format(
     "%s.%s-observer@%s",
     data.google_project.this.labels["cf_customer_id"],
@@ -35,7 +71,6 @@ locals {
     local.group_domain
   )
   developer_group_member = "group:${local.developer_group}"
-
 
   manager_group = format(
     "%s.%s-manager@%s",

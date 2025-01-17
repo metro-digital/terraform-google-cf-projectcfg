@@ -101,8 +101,8 @@ locals {
 
   project_iam_custom_role_bindings = {
     for role, config in var.custom_roles : google_project_iam_custom_role.custom_roles[role].role_id => {
-      role      = google_project_iam_custom_role.custom_roles[role].role_id
-      members   = config.members
+      role      = google_project_iam_custom_role.custom_roles[role].id
+      members   = config.project_iam_policy_members
       condition = null
     }
   }
@@ -181,4 +181,8 @@ data "google_iam_policy" "this" {
 resource "google_project_iam_policy" "this" {
   project     = data.google_project.this.project_id
   policy_data = data.google_iam_policy.this.policy_data
+
+  depends_on = [
+    google_project_service_identity.servicenetworking_service_account
+  ]
 }

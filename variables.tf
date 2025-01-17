@@ -41,9 +41,7 @@ variable "enabled_services" {
     ```
     enabled_services = [
       "bigquery.googleapis.com",
-      "compute.googleapis.com",
       "cloudscheduler.googleapis.com",
-      "iap.googleapis.com"
     ]
     ```
   EOD
@@ -54,13 +52,11 @@ variable "enabled_services" {
 variable "enabled_services_disable_on_destroy" {
   description = <<-EOD
     If true, try to disable a service given via `enabled_services` after its removal from from the list.
-    Defaults to true. May be useful in the event that a project is long-lived but the infrastructure running in
-    that project changes frequently.
-
-    Can result in failing terraform runs if the removed service is a dependency for any other active service.
+    As this can result in failing terraform runs or outages, if the removed service is a dependency for any other
+    actively used service the module doesn't disable any service by default.
   EOD
   type        = bool
-  default     = true
+  default     = false
 }
 
 /**************************************************************************************************/
@@ -68,15 +64,6 @@ variable "enabled_services_disable_on_destroy" {
 /* Network                                                                                        */
 /*                                                                                                */
 /**************************************************************************************************/
-variable "skip_default_vpc_creation" {
-  description = <<-EOD
-    When set to true the module will not create the default VPC or any related resource like NAT Gateway, firewall rules
-    or Serverless VPC access configuration.
-  EOD
-  type        = bool
-  default     = false
-}
-
 variable "skip_default_vpc_dns_logging_policy" {
   description = <<-EOD
     When set to true, the module will not create a DNS policy to enable DNS logging.
@@ -90,16 +77,13 @@ variable "skip_default_vpc_dns_logging_policy" {
 
 variable "firewall_rules" {
   description = <<-EOD
-    The module will create default firewall rules unless `skip_default_vpc_creation` is set to `true`.
+    The module will create default firewall rules if the default VPC is configured to be used within any region.
 
     The following rules are created by default:
       - **`allow_ssh_iap`:** A firewall rule allowing SSH via IAP if the network tag `fw-allow-ssh-iap`
         is set on an Compute Instance
       - **`allow_rdp_iap`:** A firewall rule allowing SSH via IAP if the network tag `fw-allow-rdp-iap`
         is set on an Compute Instance
-
-    The following additional rules are available if explicitly enabled:
-      - **`all_internal`:** A firewall rule allowing all kinds of traffic inside the VPC
 
     Example:
     ```
@@ -110,7 +94,6 @@ variable "firewall_rules" {
     ```
   EOD
   type = object({
-    all_internal  = optional(bool, false)
     allow_ssh_iap = optional(bool, true)
     allow_rdp_iap = optional(bool, true)
   })
@@ -119,68 +102,107 @@ variable "firewall_rules" {
 
 variable "vpc_regions" {
   description = <<-EOD
-    Enabled regions and configuration
+    Enabled regions and configuration.
+
+    When set to `null` the module **will not** create the default VPC or any related resource like NAT Gateway,
+    firewall rules or Serverless VPC Access connectors.
+
+    For each region (key) you can configure the following optional attributes:
+
+      **`serverless_vpc_access`:** Allows to create Serverless VPC Access Connector in in the give region.
+      If set to `null` no connector is created, if set to an empty object (`serverless_vpc_access = {}`) a
+      very minimal connector is created.
+      The sizing can be configured via the object:
+
+      **`serverless_vpc_access.min_instances`:** Minimum value of instances in autoscaling group underlying the
+      connector. Value must be between 2 and 9, inclusive. Must be lower than the value specified by max_instances.
+      Defaults to 2.
+
+      **`serverless_vpc_access.max_instances`:** Maximum value of instances in autoscaling group underlying the
+      connector. Value must be between 3 and 10, inclusive. Must be higher than the value specified by min_instances.
+       Defaults to 3.
+
+      **`serverless_vpc_access.machine_type`:** Machine type of VM Instance underlying connector. Default is `f1-micro`
+
+      **`nat`:** Allows you to finetune your NAT configuration. Defaults to a NAT Gateway per region in automatic IP
+      address allocation mode resulting in dynamic external IP addresses.
+      Behavior can be configured:
+
+      **`nat.mode`:** IP allocation mode of the NAT gateway. Can be set to `AUTO` for automatic IP allocation mode,
+      `MANUAL` for static IP allocation and `DISABLED` to not configure a NAT gateway for this region.
+
+      **`nat.num_ips`:** Number of external IP addresses to reserve for the NAT gateway. The number must be <= 300
+      and > 0. The value defaults to 1 and is only considered when the `mode` attribute is set to `MANUAL`.
+
+      **`nat.min_ports_per_vm`:** Minimum number of ports allocated to a VM from this NAT. Defaults to `null` resulting
+      in 64 for static port allocation and 32 dynamic port allocation.
+
+      **`gke_secondary_ranges`:** Create secondary ranges for GKE. Defaults to true. See [DEFAULT-VPC] documentation.
+
+      **`proxy_only`:** Create additional proxy-only subnetwork. Defaults to true. See [DEFAULT-VPC] documentation.
 
     Example:
     ```
     vpc_regions = {
-      europe-west1 = {  # Create a subnetwork in europe-west1
-        vpcaccess            = true    # Enable serverless VPC access for this region
-        nat                  = 2       # Create a Cloud NAT with 2 (static) external IP addresses (IPv4) in this region
-        nat_min_ports_per_vm = 64      # Minimum number of ports allocated to a VM from the NAT defined above (Note: this option is optional, but must be defined for all the regions if it is set for at least one)
-        gke_secondary_ranges = true    # Create secondary IP ranges used by GKE with VPC-native clusters (gke-services & gke-pods)
-        proxy_only           = true    # Create an additional "proxy-only" network in this region used by L7 load balancers
-      },
-      europe-west4 = {  # Create a subnetwork in europe-west4
-        vpcaccess            = false   # Disable serverless VPC access for this region
-        nat                  = 0       # No Cloud NAT for this region
-        nat_min_ports_per_vm = 0       # Since the `nat_min_ports_per_vm` was set for the region above, its definition is required here.
-        gke_secondary_ranges = false   # Since the `gke_secondary_ranges` was set for the region above, its definition is required here.
-        proxy_only           = false   # Since the `proxy_only` was set for the region above, its definition is required here.
+      # Create a subnetwork in europe-west1 with defaults
+      europe-west1 = {},
+      # Create a subnetwork in europe-west4 with defaults, but enable Serverless VPC Access
+      europe-west4 = {
+        serverless_vpc_access = {}
       },
     }
     ```
-
-    By default the module will create a subnetwork in europe-west1 but do not launch any additional features like
-    NAT or VPC access. Secondary ranges for GKE are disabled, too.
   EOD
 
   type = map(object({
-    vpcaccess            = bool
-    nat                  = number
-    nat_min_ports_per_vm = optional(number)
-    gke_secondary_ranges = optional(bool)
-    proxy_only           = optional(bool)
+    serverless_vpc_access = optional(object({
+      min_instances = optional(number, 2)
+      max_instances = optional(number, 3)
+      machine_type  = optional(string, "f1-micro")
+    }), null)
+    nat = optional(object({
+      mode             = optional(string, "AUTO")
+      num_ips          = optional(number, 1)
+      min_ports_per_vm = optional(number, null)
+    }), {})
+    gke_secondary_ranges = optional(bool, true)
+    proxy_only           = optional(bool, true)
   }))
 
-  default = {
-    europe-west1 = {
-      vpcaccess = false
-      nat       = 0
-    }
+  default = null
+
+  validation {
+    condition     = alltrue([for region, conf in var.vpc_regions : contains(["AUTO", "MANUAL", "DISABLED"], conf.nat.mode)])
+    error_message = <<-EOM
+      Invalid NAT configuration for the following regions:
+        ${indent(2, join("\n", formatlist("- %s", [for region, conf in var.vpc_regions : region if !contains(["AUTO", "MANUAL", "DISABLED"], conf.nat.mode)])))}
+
+      nat.mode needs to be 'AUTO', 'MANUAL' or 'DISABLED'.
+    EOM
   }
 
   validation {
-    condition = length(setsubtract(keys(var.vpc_regions), [
-      "europe-west1",
-      "europe-west3",
-      "europe-west4",
-      "europe-west8",
-      "europe-west9",
-      "europe-north1",
-      "europe-central2",
-      "europe-southwest1"
-    ])) == 0
+    condition     = alltrue([for region, conf in var.vpc_regions : (conf.nat.mode != "MANUAL" || (conf.nat.num_ips >= 1 && conf.nat.num_ips <= 300))])
     error_message = <<-EOM
-      Invalid region given, must be any of:
-        - europe-west1
-        - europe-west3
-        - europe-west4
-        - europe-west8
-        - europe-west9
-        - europe-north1
-        - europe-central2
-        - europe-southwest1."
+      Invalid NAT configuration for the following regions:
+        ${indent(2, join("\n", formatlist("- %s", [for region, conf in var.vpc_regions : region if !(conf.nat.mode != "MANUAL" || (conf.nat.num_ips >= 1 && conf.nat.num_ips <= 300))])))}
+
+      nat.num_ips needs to be between 1 and 300 inclusive for Gateways in MANUAL mode.
+    EOM
+  }
+
+  validation {
+    condition     = length(setsubtract(keys(coalesce(var.vpc_regions, {})), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])) == 0
+    error_message = <<-EOM
+      Invalid region given, your project is in landing zone '${data.google_project.this.labels["cf_landing_zone"]}',
+      so it must be any of the following regions:
+        ${indent(2, join("\n", formatlist("- %s", local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])))}
+
+      Invalid region(s) given:
+        ${indent(2, join("\n", formatlist("- %s", setsubtract(keys(coalesce(var.vpc_regions, {})), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]]))))}
+
+      Please reach out to the Cloud Foundation team if you believe this is an error. This can also be caused
+      by a new region added toward Google Cloud that is not yet supported by this module.
     EOM
   }
 }
