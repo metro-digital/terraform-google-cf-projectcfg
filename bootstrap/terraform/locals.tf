@@ -31,7 +31,7 @@ locals {
     "serviceusage.googleapis.com",
     "compute.googleapis.com",
     "servicenetworking.googleapis.com",
-    "storage-component.googleapis.com",
+    "storage.googleapis.com",
   ]
 
   # terraform_service_account_iam_roles is a list of GCP IAM roles

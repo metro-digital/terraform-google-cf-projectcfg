@@ -16,18 +16,21 @@ locals {
   services = toset(
     distinct(
       concat(
-        # 1. These base APIs should be enabled regardless of the usage of the
+        # 1. These base APIs are always enabled
         # projectcfg module
         [
           "iam.googleapis.com",
+          "servicenetworking.googleapis.com"
+        ],
+        # Enable compute related APIs if any VPC region is given
+        length(local.vpc_regions) > 0 ? [
           "compute.googleapis.com",
           "dns.googleapis.com",
           "iap.googleapis.com",
-          "servicenetworking.googleapis.com"
-        ],
-        # 2. Enable vpcaccess.googleapis.com if one network requires it
-        [for r in keys(var.vpc_regions) : "vpcaccess.googleapis.com" if var.vpc_regions[r].vpcaccess],
-        # 3. All services provided by the user
+        ] : [],
+        # 3. Enable vpcaccess.googleapis.com if one network requires it
+        [for region, config in local.vpc_regions : "vpcaccess.googleapis.com" if config.serverless_vpc_access != null],
+        # 4. All services provided by the user
         var.enabled_services
       )
     )

@@ -44,6 +44,11 @@ variable "terraform_state_bucket" {
   default     = "tf-state"
 }
 
+variable "terraform_state_bucket_location" {
+  description = "Location for the state bucket"
+  type        = string
+}
+
 variable "time_sleep" {
   description = "Time to sleep after executing IAM changes to wait for GCP sync (default: 5m)."
   type        = string

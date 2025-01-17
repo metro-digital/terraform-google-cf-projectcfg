@@ -14,26 +14,9 @@
 
 locals {
   enabled_firewall_rules = {
-    all_internal  = var.skip_default_vpc_creation ? 0 : var.firewall_rules["all_internal"] ? 1 : 0
-    allow_ssh_iap = var.skip_default_vpc_creation ? 0 : var.firewall_rules["allow_ssh_iap"] ? 1 : 0
-    allow_rdp_iap = var.skip_default_vpc_creation ? 0 : var.firewall_rules["allow_rdp_iap"] ? 1 : 0
+    allow_ssh_iap = var.vpc_regions == null ? 0 : var.firewall_rules["allow_ssh_iap"] ? 1 : 0
+    allow_rdp_iap = var.vpc_regions == null ? 0 : var.firewall_rules["allow_rdp_iap"] ? 1 : 0
   }
-}
-
-resource "google_compute_firewall" "allow_all_internal" {
-  provider = google
-  count    = local.enabled_firewall_rules.all_internal
-
-  name        = "fw-allow-all-internal"
-  description = "Allows all traffic from inside VPC"
-  network     = google_compute_network.default[0].name
-  project     = data.google_project.this.project_id
-
-  allow {
-    protocol = "all"
-  }
-
-  source_ranges = local.default_vpc_active_ranges
 }
 
 resource "google_compute_firewall" "allow_ssh_iap" {

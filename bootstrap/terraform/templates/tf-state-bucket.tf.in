@@ -7,7 +7,7 @@ module "tf_state_bucket" {
 
   project_id     = module.projectcfg.project_id
   name           = "${GCS_BUCKET}"
-  location       = "EU"
+  location       = "${GCS_BUCKET_LOCATION}"
   storage_class  = "MULTI_REGIONAL"
   uniform_access = true
   versioning     = true

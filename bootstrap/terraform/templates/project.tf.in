@@ -6,9 +6,11 @@ module "projectcfg" {
   project_id = local.project_id
   version    = "~> ${MODULE_VERSION}"
 
-  # # The module automatically grants the same permissions to the Manager, Developer and
-  # # Observer groups as the panel does. There is no need to explicitly configure them.
-  # # All other bindings in the projects IAM policy can be configured here:
+  project_id = local.project_id
+
+  # The module automatically grants the same permissions to the Manager, Developer and
+  # Observer groups as the panel does. There is no need to explicitly configure them.
+  # All other bindings in the project's IAM policy can be configured here:
   # iam_policy = [
   #   # Allow manager group to use this project
   #   # as billing project for BigQuery jobs
@@ -18,7 +20,7 @@ module "projectcfg" {
   #       local.iam_manager_group,
   #     ]
   #   },
-  #   # Same for developer group, but only during working days from 07:00 till 18:59
+  #   # Same for developer group, but only during working days from 07:00 to 18:59
   #   {
   #     role = "roles/bigquery.jobUser"
   #     members = [
@@ -69,24 +71,19 @@ module "projectcfg" {
     }
   }
 
-  # # List of vpc regions to configure and how to set them up
-  # # (default is europe-west1 only without Serverless VPC Access or NAT)
+  # List of VPC regions to configure. By default, no VPC is provisioned. If
+  # the region is given like shown below, a default configuration is used. For
+  # more information, see the Terraform documentation for the `vpc_regions`
+  # input variable.
   # vpc_regions = {
-  #   europe-west1 = {
-  #     vpcaccess = true # Enable serverless VPC access for this region
-  #     nat       = 1    # Create a Cloud NAT with 1 (static) external IP address (IPv4) in this region
-  #   },
-  #   europe-west3 = {
-  #     vpcaccess = false # Disable serverless VPC access for this region
-  #     nat       = 0     # No Cloud NAT for this region
-  #   },
+  #   europe-west1 = {}
   # }
 
-  # # List of enabled services
-  # enabled_services = [
-  #   "bigquery.googleapis.com",
-  #   "compute.googleapis.com",
-  #   "cloudscheduler.googleapis.com",
-  #   "iap.googleapis.com"
-  # ]
+  # List of enabled services
+  enabled_services = [
+    # Bootstrap creates a GCS bucket in the module to hold the Terraform state,
+    # see: tf-state-bucket.tf file. Therefore we also ensure the service is
+    # enabled.
+    "storage.googleapis.com",
+  ]
 }

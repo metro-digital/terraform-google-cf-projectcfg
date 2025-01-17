@@ -133,7 +133,7 @@ resource "google_service_account_iam_member" "this" {
 # Create storage bucket for Terraform IaC state.
 resource "google_storage_bucket" "this" {
   name          = var.terraform_state_bucket
-  location      = "EU"
+  location      = var.terraform_state_bucket_location
   force_destroy = true
   project       = var.project
 

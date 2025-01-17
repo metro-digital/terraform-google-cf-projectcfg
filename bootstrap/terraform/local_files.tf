@@ -46,7 +46,8 @@ resource "local_file" "outputs_tf" {
 
 resource "local_file" "tf_state_bucket_tf" {
   content = templatefile("templates/tf-state-bucket.tf.in", {
-    GCS_BUCKET = google_storage_bucket.this.name
+    GCS_BUCKET          = google_storage_bucket.this.name
+    GCS_BUCKET_LOCATION = google_storage_bucket.this.location
   })
   filename = "../${var.output_dir}/tf-state-bucket.tf"
 }
