@@ -18,6 +18,7 @@
       - [`vpc_regions[<REGION>].nat_min_ports_per_vm` => `vpc_regions[<REGION>].nat.min_port_per_vm`](#vpc_regionsregionnat_min_ports_per_vm--vpc_regionsregionnatmin_port_per_vm)
       - [`vpc_regions[<REGION>].vpcaccess` => `vpc_regions[<REGION>].serverless_vpc_access`](#vpc_regionsregionvpcaccess--vpc_regionsregionserverless_vpc_access)
     - [Default VPC Creation](#default-vpc-creation)
+    - [Removal of `skip_default_vpc_creation` Variable](#removal-of-skip_default_vpc_creation-variable)
     - [Automatic API Enabling](#automatic-api-enabling)
     - [`enabled_services_disable_on_destroy` Changed Default Behaviour](#enabled_services_disable_on_destroy-changed-default-behaviour)
     - [DNS Policy](#dns-policy)
@@ -378,6 +379,13 @@ code and only then change your configuration to deploy a NAT gateway using
 automatic IP address allocation if you plan to use the new automatic IP address
 allocation. This will make it easier to understand the diff produced by
 Terraform during the v2 -> v3 migration step.
+
+#### Removal of `skip_default_vpc_creation` Variable
+
+The `skip_default_vpc_creation` was removed as an input variable of the module.
+If you do not want to create the default VPC (and its default firewall rules),
+set the `vpc_regions` input variable to `{}` (the default). Alternatively,
+simply don't specify the input variable.
 
 #### Automatic API Enabling
 

@@ -15,7 +15,7 @@
 # NAT-related resources
 locals {
   nat_config_regions = {
-    for region, conf in local.vpc_regions : region => {
+    for region, conf in var.vpc_regions : region => {
       nat_ip_allocate_option = conf.nat.mode == "AUTO" ? "AUTO_ONLY" : "MANUAL_ONLY"
       min_ports_per_vm       = conf.nat.min_ports_per_vm
       ip_names = conf.nat.mode == "AUTO" ? [] : [

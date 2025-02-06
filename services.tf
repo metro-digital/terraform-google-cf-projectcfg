@@ -23,13 +23,13 @@ locals {
           "servicenetworking.googleapis.com"
         ],
         # Enable compute related APIs if any VPC region is given
-        length(local.vpc_regions) > 0 ? [
+        length(var.vpc_regions) > 0 ? [
           "compute.googleapis.com",
           "dns.googleapis.com",
           "iap.googleapis.com",
         ] : [],
         # 3. Enable vpcaccess.googleapis.com if one network requires it
-        [for region, config in local.vpc_regions : "vpcaccess.googleapis.com" if config.serverless_vpc_access != null],
+        [for region, config in var.vpc_regions : "vpcaccess.googleapis.com" if config.serverless_vpc_access != null],
         # 4. All services provided by the user
         var.enabled_services
       )

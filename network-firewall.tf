@@ -14,8 +14,8 @@
 
 locals {
   enabled_firewall_rules = {
-    allow_ssh_iap = var.vpc_regions == null ? 0 : var.firewall_rules["allow_ssh_iap"] ? 1 : 0
-    allow_rdp_iap = var.vpc_regions == null ? 0 : var.firewall_rules["allow_rdp_iap"] ? 1 : 0
+    allow_ssh_iap = length(var.vpc_regions) == 0 ? 0 : var.firewall_rules["allow_ssh_iap"] ? 1 : 0
+    allow_rdp_iap = length(var.vpc_regions) == 0 ? 0 : var.firewall_rules["allow_rdp_iap"] ? 1 : 0
   }
 }
 
