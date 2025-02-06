@@ -104,8 +104,8 @@ variable "vpc_regions" {
   description = <<-EOD
     Enabled regions and configuration.
 
-    When set to `null` the module **will not** create the default VPC or any related resource like NAT Gateway,
-    firewall rules or Serverless VPC Access connectors.
+    When set to an empty map (`{}`) the module **will not** create the default VPC or any related resource
+    like NAT Gateway, firewall rules or Serverless VPC Access connectors.
 
     For each region (key) you can configure the following optional attributes:
 
@@ -168,8 +168,8 @@ variable "vpc_regions" {
     gke_secondary_ranges = optional(bool, true)
     proxy_only           = optional(bool, true)
   }))
-
-  default = null
+  default  = {}
+  nullable = false
 
   validation {
     condition     = alltrue([for region, conf in var.vpc_regions : contains(["AUTO", "MANUAL", "DISABLED"], conf.nat.mode)])
@@ -192,14 +192,14 @@ variable "vpc_regions" {
   }
 
   validation {
-    condition     = length(setsubtract(keys(coalesce(var.vpc_regions, {})), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])) == 0
+    condition     = length(setsubtract(keys(var.vpc_regions), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])) == 0
     error_message = <<-EOM
       Invalid region given, your project is in landing zone '${data.google_project.this.labels["cf_landing_zone"]}',
       so it must be any of the following regions:
         ${indent(2, join("\n", formatlist("- %s", local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])))}
 
       Invalid region(s) given:
-        ${indent(2, join("\n", formatlist("- %s", setsubtract(keys(coalesce(var.vpc_regions, {})), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]]))))}
+        ${indent(2, join("\n", formatlist("- %s", setsubtract(keys(var.vpc_regions), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]]))))}
 
       Please reach out to the Cloud Foundation team if you believe this is an error. This can also be caused
       by a new region added toward Google Cloud that is not yet supported by this module.

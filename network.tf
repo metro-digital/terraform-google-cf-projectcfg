@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-locals {
-  # handle null value once via local
-  vpc_regions = coalesce(var.vpc_regions, {})
-}
-
 resource "google_compute_network" "default" {
   provider = google
-  count    = length(local.vpc_regions) > 0 ? 1 : 0
+  count    = length(var.vpc_regions) > 0 ? 1 : 0
 
   name                    = "default"
   description             = "Default VPC network for the project"
@@ -36,7 +31,7 @@ resource "google_compute_network" "default" {
 # create a default subnet in each enabled region
 resource "google_compute_subnetwork" "default" {
   provider = google
-  for_each = local.vpc_regions
+  for_each = var.vpc_regions
 
   name                     = "default-${each.key}"
   description              = "Default subnet in ${each.key}"
@@ -61,7 +56,7 @@ resource "google_compute_subnetwork" "default" {
 
 resource "google_vpc_access_connector" "default" {
   provider      = google
-  for_each      = { for k, v in local.vpc_regions : k => v.serverless_vpc_access if v.serverless_vpc_access != null }
+  for_each      = { for k, v in var.vpc_regions : k => v.serverless_vpc_access if v.serverless_vpc_access != null }
   name          = each.key
   region        = each.key
   ip_cidr_range = local.default_vpc_subnet_connectors[each.key]
@@ -80,7 +75,7 @@ resource "google_vpc_access_connector" "default" {
 
 resource "google_compute_subnetwork" "proxy_only" {
   provider = google
-  for_each = { for k, v in local.vpc_regions : k => v if v.proxy_only }
+  for_each = { for k, v in var.vpc_regions : k => v if v.proxy_only }
 
   name          = "proxy-only-${each.key}"
   region        = each.key
