@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.0.1](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.0.0...v3.0.1) (2025-02-11)
+
+
+### Bug Fixes
+
+* add missing on-prem landing zone ([518581a](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/518581a43643d03266bd79e1c72b0494661e9853))
+
 ## [3.0.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v2.4.1...v3.0.0) (2025-02-06)
 
 
