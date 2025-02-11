@@ -54,6 +54,9 @@ locals {
     applications_prod_eu       = local.region_sets.eu
     applications_non-prod_asia = local.region_sets.asia
     applications_prod_asia     = local.region_sets.asia
+    # The on-premise connectivity landing zone uses this modul should not contain any VPC related resource, as any VPC
+    # in thislanding zone is managed by Cloud Foundation's on-premise connectivity product.
+    on-prem_connectivity = []
   }
 
   observer_group = format(
