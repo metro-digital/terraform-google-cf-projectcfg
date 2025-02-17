@@ -55,14 +55,8 @@ variable "time_sleep" {
   default     = "5m"
 }
 
-variable "github_repository_iam_role_string" {
-  description = "GITHUB_REPOSITORY_IAM_ROLE_STRING (default: empty string)."
-  type        = string
-  default     = ""
-}
-
-variable "github_repository_sa_block_string" {
-  description = "GITHUB_REPOSITORY_SA_BLOCK_STRING (default: empty string)."
+variable "github_repository" {
+  description = "GitHub Repository to configure WIF"
   type        = string
   default     = ""
 }

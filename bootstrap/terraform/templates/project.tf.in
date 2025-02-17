@@ -39,8 +39,9 @@ module "projectcfg" {
   # ]
 
   service_accounts = {
-    "${SA_SHORT_NAME}" = {
-      display_name = "Service account used in IaC pipelines"
+    "${IAC_SA_SHORT_NAME}" = {
+      display_name = "Terraform IaC pipelines"
+      description  = "Service account used in IaC pipeline"
       iam_policy   = [
         {
             role    = "roles/iam.serviceAccountTokenCreator"
@@ -53,19 +54,9 @@ module "projectcfg" {
         }
       ]
       project_iam_policy_roles = [
-          ${GITHUB_REPOSITORY_IAM_ROLE_STRING}
-          "roles/compute.networkAdmin",
-          "roles/dns.admin",
-          "roles/vpcaccess.admin",
-          "roles/compute.securityAdmin",
-          "roles/storage.admin",
-          "roles/storage.objectAdmin",
-          "roles/iam.serviceAccountAdmin",
-          "roles/iam.securityAdmin",
-          "roles/iam.roleAdmin",
-          "roles/serviceusage.serviceUsageAdmin"
+        ${IAC_SA_ROLES}
       ]
-      ${GITHUB_REPOSITORY_SA_BLOCK_STRING}
+      ${IAC_SA_GITHUB_REPOSITORY_STRING}
     }
   }
 

@@ -123,11 +123,8 @@ fi
 if [ "${GITHUB_REPOSITORY_PARAM:-notset}" != "notset" ]; then
 	# Trim trailing .git from repositories
 	GITHUB_REPOSITORY="${GITHUB_REPOSITORY_PARAM%.git}"
-	GITHUB_REPOSITORY_SA_BLOCK_STRING="github_action_repositories = [ \"${GITHUB_REPOSITORY}\" ]"
-	GITHUB_REPOSITORY_IAM_ROLE_STRING="\"roles/iam.workloadIdentityPoolAdmin\","
 else
-	GITHUB_REPOSITORY_SA_BLOCK_STRING=""
-	GITHUB_REPOSITORY_IAM_ROLE_STRING=""
+	GITHUB_REPOSITORY=""
 fi
 
 TIME_SLEEP="${TIME_SLEEP_PARAM:-5m}"
@@ -329,8 +326,7 @@ cat <<-EOF >"terraform/generated-${GCP_PROJECT_ID}.tfvars"
 	terraform_sa_name="${SA_NAME}"
 	terraform_state_bucket="${GCS_BUCKET}"
 	terraform_state_bucket_location="${GCS_BUCKET_LOCATION}"
-	github_repository_iam_role_string="${GITHUB_REPOSITORY_IAM_ROLE_STRING}"
-	github_repository_sa_block_string="${GITHUB_REPOSITORY_SA_BLOCK_STRING}"
+	github_repository="${GITHUB_REPOSITORY}"
 	time_sleep="${TIME_SLEEP}"
 	output_dir="${OUTPUT_DIR}"
 EOF
@@ -361,6 +357,8 @@ echo "Finished first stage terraform apply."
 unset TF_DATA_DIR
 # also unset the workspace as we now operate on the bootstrap code that doesnt know about workspaces
 unset TF_WORKSPACE
+
+terraform -chdir="${OUTPUT_DIR}" fmt
 
 if [ "${INIT_ONLY}" = "yes" ]; then
 	cat <<-EOF
