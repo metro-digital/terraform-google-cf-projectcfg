@@ -34,20 +34,36 @@ locals {
     "storage.googleapis.com",
   ]
 
+  wif_advertisement = <<-EOM
+    # To use this service account from a GitHub Action workflow, uncomment the following line
+    # github_action_repositories = [ "some-user-or-org/some-repo" ]
+  EOM
+
+  wif_block = <<-EOM
+    # Allows usage of this service account from a GitHub Action workflow in the following repositories
+    github_action_repositories = [ "${var.github_repository}" ]
+  EOM
+
   # terraform_service_account_iam_roles is a list of GCP IAM roles
   # required for the Terraform IaC service account to have the privileges
   # allowing management of the GCP project and resources.
-  terraform_service_account_iam_roles = [
-    "roles/compute.networkAdmin",
-    "roles/compute.securityAdmin",
-    "roles/dns.admin",
-    "roles/iam.roleAdmin",
-    "roles/iam.securityAdmin",
-    "roles/iam.serviceAccountAdmin",
-    "roles/serviceusage.serviceUsageAdmin",
-    "roles/storage.admin",
-    "roles/storage.objectAdmin",
-  ]
+  terraform_service_account_iam_roles = toset(concat(
+    [
+      "roles/compute.networkAdmin",
+      "roles/compute.securityAdmin",
+      "roles/dns.admin",
+      "roles/iam.roleAdmin",
+      "roles/iam.securityAdmin",
+      "roles/iam.serviceAccountAdmin",
+      "roles/serviceusage.serviceUsageAdmin",
+      "roles/storage.admin",
+      "roles/storage.objectAdmin",
+      "roles/vpcaccess.admin",
+    ],
+    var.github_repository == "" ? [] : ["roles/iam.workloadIdentityPoolAdmin"]
+  ))
+
+  repository_string = var.github_repository == "" ? local.wif_advertisement : local.wif_block
 
   # identity_service_account_iam_roles is a list of GCP IAM roles
   # required for the identity service account to have the privileges

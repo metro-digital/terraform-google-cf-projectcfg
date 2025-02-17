@@ -54,7 +54,8 @@ resource "time_sleep" "manager_rights" {
 # in the second stage, where generated Terraform code is executed.
 resource "google_service_account" "this" {
   account_id   = var.terraform_sa_name
-  display_name = "Service account used in IaC pipelines"
+  display_name = "Terraform IaC pipelines"
+  description  = "Service account used in IaC pipeline"
   project      = var.project
 
   depends_on = [

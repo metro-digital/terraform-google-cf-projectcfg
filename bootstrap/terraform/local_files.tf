@@ -54,10 +54,10 @@ resource "local_file" "tf_state_bucket_tf" {
 
 resource "local_file" "project_tf" {
   content = templatefile("templates/project.tf.in", {
-    SA_SHORT_NAME                     = var.terraform_sa_name,
-    GITHUB_REPOSITORY_IAM_ROLE_STRING = var.github_repository_iam_role_string,
-    GITHUB_REPOSITORY_SA_BLOCK_STRING = var.github_repository_sa_block_string,
-    MODULE_VERSION                    = local.module_version
+    IAC_SA_SHORT_NAME               = var.terraform_sa_name,
+    IAC_SA_ROLES                    = join(",\n", formatlist("\"%s\"", local.terraform_service_account_iam_roles))
+    IAC_SA_GITHUB_REPOSITORY_STRING = chomp(local.repository_string),
+    MODULE_VERSION                  = local.module_version
   })
   filename = "../${var.output_dir}/project.tf"
 }
