@@ -59,6 +59,22 @@ variable "enabled_services_disable_on_destroy" {
   default     = false
 }
 
+variable "non_cf_panel_project" {
+  description = <<-EOD
+    By default, the module assumes that the managed project is a project created and managed via the Cloud Foundation
+    Panel. It checks if certain labels (controlled by the panel) are set, and validates certain inputs like regions
+    against landing zones. Additionally the module automatically authorises the Google Cloud Identity groups managed
+    by the panel within the Google Cloud project's IAM policy. This ensures that there cannot be a drift between the
+    authorisations enforced via the panel and the ones provisioned via this module.
+
+    Set this input variable to `true` if you use this module to manage a Google Cloud project which was not provisioned
+    by the Cloud Foundation Panel.
+  EOD
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 /**************************************************************************************************/
 /*                                                                                                */
 /* Network                                                                                        */
@@ -192,17 +208,17 @@ variable "vpc_regions" {
   }
 
   validation {
-    condition     = length(setsubtract(keys(var.vpc_regions), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])) == 0
+    condition     = length(setsubtract(keys(var.vpc_regions), local.landing_zone_regions[local.cf_landing_zone_id])) == 0
     error_message = <<-EOM
-      Invalid region given, your project is in landing zone '${data.google_project.this.labels["cf_landing_zone"]}',
+      Invalid region given, your project is in landing zone '${local.cf_landing_zone_id}',
       so it must be any of the following regions:
-        ${indent(2, join("\n", formatlist("- %s", local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]])))}
+        ${indent(2, join("\n", formatlist("- %s", local.landing_zone_regions[local.cf_landing_zone_id])))}
 
       Invalid region(s) given:
-        ${indent(2, join("\n", formatlist("- %s", setsubtract(keys(var.vpc_regions), local.landing_zone_regions[data.google_project.this.labels["cf_landing_zone"]]))))}
+        ${indent(2, join("\n", formatlist("- %s", setsubtract(keys(var.vpc_regions), local.landing_zone_regions[local.cf_landing_zone_id]))))}
 
       Please reach out to the Cloud Foundation team if you believe this is an error. This can also be caused
-      by a new region added toward Google Cloud that is not yet supported by this module.
+      by a new region added in Google Cloud that is not yet supported by this module.
     EOM
   }
 }

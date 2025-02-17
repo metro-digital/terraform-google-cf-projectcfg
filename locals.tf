@@ -13,12 +13,23 @@
 # limitations under the License.
 
 locals {
-  # checked in post condition for data.google_project.project
+  # Get certain data for Cloud Foundation panel managed projects from labels
+  #
+  # Existence of values is enforced via post condition on data.google_project. We can therefore blindly assume the
+  # labels exist and reference them (or use dummy data in case the module operates in non_cf_panel_project mode).
+  #
+  # Conditionally storing the label values into a local, and defaulting to a special string in case of non_cf_panel_project mode
+  # to avoid repeatedly writing this if statement at every usage.
+  cf_mesh_env        = var.non_cf_panel_project ? "not-a-cf-panel-project" : data.google_project.this.labels["cf_mesh_env"]
+  cf_customer_id     = var.non_cf_panel_project ? "not-a-cf-panel-project" : data.google_project.this.labels["cf_customer_id"]
+  cf_project_id      = var.non_cf_panel_project ? "not-a-cf-panel-project" : data.google_project.this.labels["cf_project_id"]
+  cf_landing_zone_id = var.non_cf_panel_project ? "not-a-cf-panel-project" : data.google_project.this.labels["cf_landing_zone_id"]
+
   env_group_domain = {
-    qa   = "metrosystems.net"
-    prod = "cloudfoundation.metro.digital"
+    qa                     = "metrosystems.net"
+    prod                   = "cloudfoundation.metro.digital"
+    not-a-cf-panel-project = "invalid.tld"
   }
-  group_domain = local.env_group_domain[data.google_project.this.labels["cf_mesh_env"]]
 
   region_sets = {
     eu = [
@@ -49,37 +60,49 @@ locals {
     ]
   }
 
-  landing_zone_regions = {
-    applications_non-prod_eu   = local.region_sets.eu
-    applications_prod_eu       = local.region_sets.eu
-    applications_non-prod_asia = local.region_sets.asia
-    applications_prod_asia     = local.region_sets.asia
-    # The on-premise connectivity landing zone uses this modul should not contain any VPC related resource, as any VPC
-    # in thislanding zone is managed by Cloud Foundation's on-premise connectivity product.
-    on-prem_connectivity = []
+  # Landing zones defined in the Cloud Foundation panel and their respective regions.
+  # Storing this in dedicated local and merging it into local.landing_zone_regions
+  # as this allows to use local.panel_landing_zone_regions for example in certain
+  # postcondition checks for data.google_project.this.
+  panel_landing_zone_regions = {
+    applications-non-prod-eu   = local.region_sets.eu
+    applications-prod-eu       = local.region_sets.eu
+    applications-non-prod-asia = local.region_sets.asia
+    applications-prod-asia     = local.region_sets.asia
+    # The on-premise connectivity landing zone uses this module should not contain any VPC related resource, as any VPC
+    # in this landing zone is managed by Cloud Foundation's on-premise connectivity product.
+    on-prem-connectivity = []
   }
 
-  observer_group = format(
-    "%s.%s-observer@%s",
-    data.google_project.this.labels["cf_customer_id"],
-    data.google_project.this.labels["cf_project_id"],
-    local.group_domain
+  landing_zone_regions = merge(
+    local.panel_landing_zone_regions,
+    {
+      # Special "fake landing zone" if module operates in non_cf_panel_project mode that supports any kind of region
+      not-a-cf-panel-project = distinct(flatten(values(local.region_sets)))
+    }
   )
-  observer_group_member = "group:${local.observer_group}"
 
-  developer_group = format(
-    "%s.%s-developer@%s",
-    data.google_project.this.labels["cf_customer_id"],
-    data.google_project.this.labels["cf_project_id"],
-    local.group_domain
+  # the observer, developer and manager group strings become invalid groups if the module
+  # operates in non_cf_panel_project mode so ensure you only use them when
+  # var.non_cf_panel_project is false
+  observer_group_member = format(
+    "group:%s.%s-observer@%s",
+    local.cf_customer_id,
+    local.cf_project_id,
+    local.env_group_domain[local.cf_mesh_env]
   )
-  developer_group_member = "group:${local.developer_group}"
 
-  manager_group = format(
-    "%s.%s-manager@%s",
-    data.google_project.this.labels["cf_customer_id"],
-    data.google_project.this.labels["cf_project_id"],
-    local.group_domain
+  developer_group_member = format(
+    "group:%s.%s-developer@%s",
+    local.cf_customer_id,
+    local.cf_project_id,
+    local.env_group_domain[local.cf_mesh_env]
   )
-  manager_group_member = "group:${local.manager_group}"
+
+  manager_group_member = format(
+    "group:%s.%s-manager@%s",
+    local.cf_customer_id,
+    local.cf_project_id,
+    local.env_group_domain[local.cf_mesh_env]
+  )
 }

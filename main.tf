@@ -20,20 +20,21 @@ data "google_project" "this" {
   lifecycle {
     # Ensure the cf_mesh_env is set for project
     postcondition {
-      condition     = contains(keys(self.labels), "cf_mesh_env")
+      condition     = contains(keys(self.labels), "cf_mesh_env") || var.non_cf_panel_project
       error_message = <<-EOE
         Missing label 'cf_mesh_env' on project '${self.project_id}'!
 
         Currently configured labels:
           ${indent(2, join("\n", formatlist("- %s", keys(self.labels))))}
 
-        This module only works with Google Projects managed within the
-        Cloud Foundation panel.
+        This module expects a Google Cloud project managed within the Cloud Foundation panel.
+        If your project is not managed there, please set the input variable `non_cf_panel_project`
+        to true.
       EOE
     }
 
     postcondition {
-      condition     = contains(keys(local.env_group_domain), self.labels["cf_mesh_env"])
+      condition     = contains(keys(local.env_group_domain), lookup(self.labels, "cf_mesh_env", "")) || var.non_cf_panel_project
       error_message = <<-EOE
         Unknown enviroment set in label 'cf_mesh_env' on project '${self.project_id}'!
 
@@ -45,51 +46,54 @@ data "google_project" "this" {
     }
 
     postcondition {
-      condition     = contains(keys(self.labels), "cf_customer_id")
+      condition     = contains(keys(self.labels), "cf_customer_id") || var.non_cf_panel_project
       error_message = <<-EOE
         Missing label 'cf_customer_id' on project '${self.project_id}'!
 
         Currently configured labels:
           ${indent(2, join("\n", formatlist("- %s", keys(self.labels))))}
 
-        This module only works with Google Projects managed within the
-        Cloud Foundation panel.
+        This module expects a Google Cloud project managed within the Cloud Foundation panel.
+        If your project is not managed there, please set the input variable `non_cf_panel_project`
+        to true.
       EOE
     }
 
     postcondition {
-      condition     = contains(keys(self.labels), "cf_project_id")
+      condition     = contains(keys(self.labels), "cf_project_id") || var.non_cf_panel_project
       error_message = <<-EOE
         Missing label 'cf_project_id' on project '${self.project_id}'!
 
         Currently configured labels:
           ${indent(2, join("\n", formatlist("- %s", keys(self.labels))))}
 
-        This module only works with Google Projects managed within the
-        Cloud Foundation panel.
+        This module expects a Google Cloud project managed within the Cloud Foundation panel.
+        If your project is not managed there, please set the input variable `non_cf_panel_project`
+        to true.
       EOE
     }
 
     postcondition {
-      condition     = contains(keys(self.labels), "cf_landing_zone")
+      condition     = contains(keys(self.labels), "cf_landing_zone_id") || var.non_cf_panel_project
       error_message = <<-EOE
-        Missing label 'cf_landing_zone' on project '${self.project_id}'!
+        Missing label 'cf_landing_zone_id' on project '${self.project_id}'!
 
         Currently configured labels:
           ${indent(2, join("\n", formatlist("- %s", keys(self.labels))))}
 
-        This module only works with Google Projects managed within the
-        Cloud Foundation panel.
+        This module expects a Google Cloud project managed within the Cloud Foundation panel.
+        If your project is not managed there, please set the input variable `non_cf_panel_project`
+        to true.
       EOE
     }
 
     postcondition {
-      condition     = contains(keys(local.landing_zone_regions), self.labels["cf_landing_zone"])
+      condition     = contains(keys(local.panel_landing_zone_regions), lookup(self.labels, "cf_landing_zone_id", "")) || var.non_cf_panel_project
       error_message = <<-EOE
         Unknown landing-zone set in label 'cf_landing_zone' on project '${self.project_id}'!
 
         Currently known landing zone:
-          ${indent(2, join("\n", formatlist("- %s", keys(local.landing_zone_regions))))}
+          ${indent(2, join("\n", formatlist("- %s", keys(local.panel_landing_zone_regions))))}
 
         Please reach out to the Cloud Foundation team to report this error.
       EOE
