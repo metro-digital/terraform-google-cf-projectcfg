@@ -214,9 +214,10 @@ attribute to `project_iam_policy_roles`.
 #### De-Privilege Compute Engine Default Service Account
 
 The module no longer supports the role `roles/editor` role to be granted to the
-[Compute Engine default service account]. The flag was removed, and the role is
-always removed on a project level. A previous announcement mid-2024 already
-promoted the deprecation of primitive roles.
+[Compute Engine default service account]. The old module input variable
+`deprivilege_compute_engine_sa` was removed, and the role is now always removed
+on project level. A previous announcement mid-2024 already promoted the
+deprecation of primitive roles.
 
 When creating a Compute Engine instance, use user-managed service accounts to be
 compliant with Cloud Policies:
