@@ -1,5 +1,13 @@
 # Changelog
 
+## [3.0.2](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.0.1...v3.0.2) (2025-02-19)
+
+
+### Bug Fixes
+
+* douplicate project_id parameter ([ff3337e](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/ff3337e28c3908352c37a1ecc5f407ce1def02b9))
+* passing repo to bootstrap causes failure ([0ad82d0](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/0ad82d0fe2be5fb47927944f42b6c2fd5bd8033f))
+
 ## [3.0.1](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.0.0...v3.0.1) (2025-02-11)
 
 
