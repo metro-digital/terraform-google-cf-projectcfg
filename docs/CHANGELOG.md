@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.0.2...v3.1.0) (2025-02-20)
+
+
+### Features
+
+* allow non cf panel projects ([4018b7c](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/4018b7cf975c88f5fbcfeb4c506e16cd7660c9e3))
+
 ## [3.0.2](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.0.1...v3.0.2) (2025-02-19)
 
 
