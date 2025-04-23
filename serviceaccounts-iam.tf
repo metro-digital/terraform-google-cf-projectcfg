@@ -83,11 +83,12 @@ locals {
           [lookup(local.service_accounts_wif_bindings[sa], role, { role = "" }).role],
           [lookup(local.service_accounts_iam_non_authoritative_role_bindings[sa], role, { role = "" }).role],
         )))[0]
-        members = distinct(compact(concat(
+        # filter out deleted principals as they cant be used in IAM policies
+        members = [for member in distinct(compact(concat(
           lookup(local.service_accounts_iam_policy[sa], role, { members = [] }).members,
           lookup(local.service_accounts_wif_bindings[sa], role, { members = [] }).members,
           lookup(local.service_accounts_iam_non_authoritative_role_bindings[sa], role, { members = [] }).members,
-        )))
+        ))) : member if !startswith(member, "deleted:")]
         condition = one([for condition in flatten([
           [lookup(local.service_accounts_iam_policy[sa], role, { condition = null }).condition],
           [lookup(local.service_accounts_wif_bindings[sa], role, { condition = null }).condition],
