@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.1.1](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.1.0...v3.1.1) (2025-04-24)
+
+
+### Bug Fixes
+
+* filter deleted IAM principals ([b27b7e5](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/b27b7e595ebc6b935e3ce9bd56b38b7b356ad3f3))
+
 ## [3.1.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.0.2...v3.1.0) (2025-02-20)
 
 
