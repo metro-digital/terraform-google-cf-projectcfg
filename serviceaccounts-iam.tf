@@ -131,4 +131,8 @@ resource "google_service_account_iam_policy" "service_accounts" {
 
   service_account_id = google_service_account.service_accounts[each.key].id
   policy_data        = data.google_iam_policy.service_accounts[each.key].policy_data
+
+  depends_on = [
+    google_tags_tag_binding.serviceaccounts
+  ]
 }
