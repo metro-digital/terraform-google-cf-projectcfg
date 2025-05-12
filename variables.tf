@@ -385,6 +385,8 @@ variable "service_accounts" {
     Workload Identity Federation. This allows any GitHub Action pipeline to use this service account without the need
     for service account keys. An example can be found within the [FAQ].
 
+    **`tags` (optional):** You can list tag values here. For each tag value a tag binding will be created.
+
     For more details, see the documentation for Google's GitHub action for authentication:
     [`google-github-actions/auth`](https://github.com/google-github-actions/auth).
 
@@ -416,6 +418,9 @@ variable "service_accounts" {
               namespace       = "some-namespace"
               service_account = "some-service-account-name"
             }
+          ]
+          tags = [
+            "tagValues/123456789"
           ]
         }
         deployments = {
@@ -479,6 +484,7 @@ variable "service_accounts" {
       namespace       = string
       service_account = string
     })), [])
+    tags = optional(list(string), [])
   }))
 
   default = {}
