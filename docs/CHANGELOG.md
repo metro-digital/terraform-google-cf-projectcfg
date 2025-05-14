@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.2.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.1.1...v3.2.0) (2025-05-14)
+
+
+### Features
+
+* add support for tags to service accounts ([336eac6](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/336eac628ea9738b8e6ad79255bc666b229e9425))
+
 ## [3.1.1](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.1.0...v3.1.1) (2025-04-24)
 
 
