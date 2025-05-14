@@ -88,6 +88,6 @@ locals {
   # operator, the do not want to include the patch version. So we build it here with some helper variables and
   # pass it into the template
   module_major_version = 3 # x-release-please-major
-  module_minor_version = 1 # x-release-please-minor
+  module_minor_version = 2 # x-release-please-minor
   module_version       = "${local.module_major_version}.${local.module_minor_version}"
 }
