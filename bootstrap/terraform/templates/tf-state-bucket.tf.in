@@ -2,15 +2,16 @@
 # https://github.com/metro-digital/terraform-google-cf-projectcfg repository
 
 module "tf_state_bucket" {
-  source = "metro-digital/cf-bucket/google"
-  version    = "~> 1.2"
+  source  = "metro-digital/cf-bucket/google"
+  version = "~> 1.3"
 
-  project_id     = module.projectcfg.project_id
-  name           = "${GCS_BUCKET}"
-  location       = "${GCS_BUCKET_LOCATION}"
-  storage_class  = "MULTI_REGIONAL"
-  uniform_access = true
-  versioning     = true
+  project_id               = module.projectcfg.project_id
+  name                     = "${GCS_BUCKET}"
+  location                 = "${GCS_BUCKET_LOCATION}"
+  storage_class            = "MULTI_REGIONAL"
+  uniform_access           = true
+  versioning               = true
+  public_access_prevention = "enforced"
 
   lifecycle_rules = [
     {

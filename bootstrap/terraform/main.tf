@@ -151,6 +151,8 @@ resource "google_storage_bucket" "this" {
     }
   }
 
+  public_access_prevention = "enforced"
+
   depends_on = [
     google_service_account_iam_member.this,
   ]
