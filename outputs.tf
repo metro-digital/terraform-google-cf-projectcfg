@@ -17,6 +17,14 @@ output "project_id" {
   value       = data.google_project.this.project_id
 }
 
+output "project_details" {
+  description = <<-EOD
+    A google_project data source of the managed project.
+    For details see: https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project
+  EOD
+  value       = data.google_project.this
+}
+
 output "service_accounts" {
   description = <<-EOD
     **Map of created service accounts and their attributes.**
