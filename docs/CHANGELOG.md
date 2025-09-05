@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.3.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.2.0...v3.3.0) (2025-09-05)
+
+
+### Features
+
+* add google_project data source to module output ([29734c8](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/29734c81681762f97cc4a025dd96305e0a408882))
+
 ## [3.2.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.1.1...v3.2.0) (2025-05-14)
 
 
