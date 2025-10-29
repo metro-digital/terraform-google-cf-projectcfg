@@ -331,6 +331,9 @@ cat <<-EOF >"terraform/generated-${GCP_PROJECT_ID}.tfvars"
 	output_dir="${OUTPUT_DIR}"
 EOF
 
+echo "Removing .terraform.lock.hcl file if it exists"
+rm -f terraform/.terraform.lock.hcl
+
 echo "Starting first stage terraform init."
 terraform -chdir=terraform init
 
