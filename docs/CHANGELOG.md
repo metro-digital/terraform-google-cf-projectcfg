@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.4.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.3.0...v3.4.0) (2025-11-10)
+
+
+### Features
+
+* support v7 of the terraform google provider ([a7c22e7](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/a7c22e7bbf46a91f21b6721cfdb2b1d33d2688a9))
+
 ## [3.3.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.2.0...v3.3.0) (2025-09-05)
 
 
