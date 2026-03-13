@@ -21,7 +21,7 @@ default_stages:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b  # frozen: v5.0.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
     hooks:
       - id: detect-private-key
       - id: end-of-file-fixer
@@ -29,7 +29,7 @@ repos:
       - id: mixed-line-ending
         args: ['--fix', 'lf']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: 55d0143972eec4905fdaea2f444f1e88218f9dce  # frozen: v1.96.3
+    rev: d0e12caebb2ab0ee8bf98181c8bfe9702bca103d  # frozen: v1.105.0
     hooks:
       - id: terraform_fmt
       - id: terraform_tflint
@@ -40,7 +40,7 @@ repos:
         args:
           - --args=--config=.terraform-docs.yaml
   - repo: https://github.com/adrienverge/yamllint
-    rev: 81e9f98ffd059efe8aa9c1b1a42e5cce61b640c6  # frozen: v1.35.1
+    rev: cba56bcde1fdd01c1deb3f945e69764c291a6530  # frozen: v1.38.0
     hooks:
       - id: yamllint
   - repo: https://github.com/jumanjihouse/pre-commit-hooks
@@ -50,22 +50,17 @@ repos:
       - id: shellcheck
       - id: shfmt
   - repo: https://github.com/hukkin/mdformat
-    rev: e20b1ac5acb8aba0b49d3a9109c6e6b58684ee83  # frozen: 0.7.21
+    rev: 2d496dbc18e31b83a1596685347ffe0b6041daf0  # frozen: 1.0.0
     hooks:
       - id: mdformat
-        # needed to support exclude in `.mdformat.toml`
-        # pre-commit runs on python 3.12 by default on MacOS and most linux distributions.
-        # Install python 3.13 if pre-commit fails.
-        language_version: "3.13"
         # Optionally add plugins
         additional_dependencies:
           - mdformat-gfm
           - mdformat-gfm-alerts
           - mdformat-shfmt
           - mdformat-toc
-          - mdformat-tables
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: a4288145006c83a91f59083ab813165ca05ad3f3  # frozen: v9.20.0
+    rev: 1f6454da22d006d5bb0d2e65c96c43c23c8a534f  # frozen: v9.24.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
