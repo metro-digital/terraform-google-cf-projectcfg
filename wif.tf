@@ -1,4 +1,4 @@
-# Copyright 2025 METRO Digital GmbH
+# Copyright 2026 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +23,13 @@ locals {
     for sa, config in var.service_accounts : sa if length(config.runtime_service_accounts) > 0
   ])) > 0 ? 1 : 0
 
+  meshstack_buildingblocks_enabled = length(compact([
+    for sa, config in var.service_accounts : sa if length(config.meshstack_buildingblocks) > 0
+  ])) > 0 ? 1 : 0
+
   # We also need to enable some services to make the Workload Identity Federation setup possible
   # if we have any usage of the service
-  wif_needed_services = (local.github_actions_enabled + local.runtime_service_accounts_enabled) > 0 ? toset([
+  wif_needed_services = (local.github_actions_enabled + local.runtime_service_accounts_enabled + local.meshstack_buildingblocks_enabled) > 0 ? toset([
     "cloudresourcemanager.googleapis.com",
     "iamcredentials.googleapis.com",
     "sts.googleapis.com"

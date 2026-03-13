@@ -1,4 +1,4 @@
-# Copyright 2025 METRO Digital GmbH
+# Copyright 2026 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -379,6 +379,12 @@ variable "service_accounts" {
     in Cloud Native Runtime clusters to use this service account without the need for service account keys. A detailed
     example can be found within the [FAQ].
 
+    **`meshstack_buildingblocks` (optional):** You can list Meshstack Building Blocks here. For details on the format,
+    see the example below. A Workload Identity Pool and a Workload Identity Provider needed for Workload Identity Federation
+    will be created automatically. Each building block given gains permissions to authenticate as this service account
+    using Workload Identity Federation. This allows workloads running on Meshstacks SaaS platform to use this service
+    account without the need for service account keys.
+
     **`github_action_repositories` (optional):** You can list GitHub repositories (format: `user/repo`) here.
     A Workload Identity Pool and a Workload Identity Provider needed for Workload Identity Federation will be
     created automatically. Each repository given gains permissions to authenticate as this service account using
@@ -402,6 +408,19 @@ variable "service_accounts" {
     Example:
     ```
       service_accounts = {
+        "meshstack-building-block" = {
+          description              = "Used by the building block in the Cloud Foundation Panel (meshstack)"
+          display_name             = "Building Block"
+          iam_policy               = []
+          project_iam_policy_roles = []
+          meshstack_buildingblocks = [
+            {
+              issuer    = "https://container.googleapis.com/v1/projects/some-project/locations/europe-west1/clusters/some-cluster"
+              audiences = ["gcp-workload-identity-provider:some-customer"]
+              subjects  = ["system:serviceaccount:some-customer:workspace.example.buildingblockdefinition.29980db7-2a61-4f01-bf6b-18ea61606700"]
+            }
+          ]
+        }
         runtime-sa = {
           display_name = "My Runtime Workload"
           description  = "Workload running in Cloud Native Runtime Cluster"
@@ -483,6 +502,11 @@ variable "service_accounts" {
       cluster_id      = string
       namespace       = string
       service_account = string
+    })), [])
+    meshstack_buildingblocks = optional(list(object({
+      issuer    = string
+      audiences = list(string)
+      subjects  = list(string)
     })), [])
     tags = optional(list(string), [])
   }))

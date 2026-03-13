@@ -1,4 +1,4 @@
-# Copyright 2025 METRO Digital GmbH
+# Copyright 2026 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ locals {
       "roles/iam.workloadIdentityUser" = {
         role      = "roles/iam.workloadIdentityUser"
         condition = null
-        members = compact(concat(
+        members = compact(flatten(concat(
           [
             for repo in config.github_action_repositories : format(
               "principalSet://iam.googleapis.com/%s/attribute.repository/%s",
@@ -50,8 +50,18 @@ locals {
               runtime_sa.namespace,
               runtime_sa.service_account
             )
+          ],
+          [
+            for bb in config.meshstack_buildingblocks : [
+              for subject in bb.subjects :
+              format(
+                "principal://iam.googleapis.com/%s/subject/%s",
+                google_iam_workload_identity_pool.meshstack_buildingblocks[0].name,
+                subject
+              )
+            ]
           ]
-        ))
+        )))
       }
     }
   }
