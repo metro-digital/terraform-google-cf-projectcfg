@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.4.0...v3.5.0) (2026-03-13)
+
+
+### Features
+
+* workload identity support for meshstack building blocks ([128d430](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/128d43075f441957344f70cb59c226365c676c34))
+
 ## [3.4.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.3.0...v3.4.0) (2025-11-10)
 
 
