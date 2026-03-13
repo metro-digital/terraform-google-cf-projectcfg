@@ -40,12 +40,13 @@ jobs:
             grep -o -E -m 1 "https://.+?-linux-amd64.tar.gz")" > terraform-docs.tgz && \
             tar -xzf terraform-docs.tgz terraform-docs && rm terraform-docs.tgz && chmod +x terraform-docs && \
             sudo mv terraform-docs /usr/bin/
+
       - name: Install tflint
-        run: |
-          # tflint
-          curl -L "$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest |
-            grep -o -E -m 1 "https://.+?_linux_amd64.zip")" > tflint.zip && \
-            unzip tflint.zip && rm tflint.zip && sudo mv tflint /usr/bin/
+        uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: latest
+          cache: 'true'
+
       - name: Install shfmt
         run: |
           curl -L "$(curl -s https://api.github.com/repos/mvdan/sh/releases/latest |
