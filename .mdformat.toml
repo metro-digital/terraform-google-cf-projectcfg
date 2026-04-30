@@ -1,4 +1,4 @@
-wrap = 80
+wrap = 100
 validate = true
 exclude = [
     "docs/TERRAFORM.md",
