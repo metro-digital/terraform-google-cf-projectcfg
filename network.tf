@@ -88,7 +88,7 @@ resource "google_compute_subnetwork" "proxy_only" {
 
 resource "google_dns_policy" "logging" {
   provider = google
-  count    = var.skip_default_vpc_dns_logging_policy ? 0 : length(google_compute_network.default)
+  count    = var.skip_default_vpc_dns_logging_policy ? 0 : length(var.vpc_regions) > 0 ? 1 : 0
 
   name        = "logging"
   description = "Enable DNS logging to be compliant with Cloud policies"
