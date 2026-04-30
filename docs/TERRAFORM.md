@@ -2,7 +2,7 @@
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | project_id | Google Cloud project ID. The module can only be used with projects managed via the Cloud FFoundation Panel. | `string` | n/a | yes |
 | custom_roles | Create custom roles and define who gains that role on project level. If your project level IAM binding needs to set<br/>a condition, use the `iam_policy` input variable of this module while referencing the full name of your custom role.<br/><br/>Example:<pre>custom_roles = {<br/>  "appengine.applicationsCreator" = {<br/>    title       = "AppEngine Creator",<br/>    description = "Custom role to grant permissions for creating App Engine applications.",<br/>    permissions = [<br/>      "appengine.applications.create",<br/>    ]<br/>    project_iam_policy_members = [<br/>      "group:customer.project-role@cloudfoundation.metro.digital",<br/>    ]<br/>  }<br/>}</pre> | <pre>map(object({<br/>    title                      = string<br/>    description                = string<br/>    permissions                = list(string)<br/>    project_iam_policy_members = list(string)<br/>  }))</pre> | `{}` | no |
 | enabled_services | List of GCP enabled services / APIs to enable. Dependencies will be enabled automatically.<br/><br/>**Remark**: Google sometimes changes (mostly adding) dependencies and will activate those automatically for your<br/>project. Therefore being authoritative on services usually causes a lot of trouble. The module doesn't provide any<br/>option to be authoritative for this reason. By default it is partly authoritative, means a removed service is<br/>disabled when removed from this list. This can can be controlled by the `enabled_services_disable_on_destroy` flag.<br/><br/>Example:<pre>enabled_services = [<br/>  "bigquery.googleapis.com",<br/>  "cloudscheduler.googleapis.com",<br/>]</pre> | `list(string)` | `[]` | no |
@@ -23,7 +23,7 @@
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | custom_roles | **Map of created custom roles and their attributes.**<pre>Key:   Same key as given for the `custom_roles` input variable.<br/>Value: Attributes of the managed custom roles.<br/><br/>  id:    An identifier for the resource in the format `projects/{{project}}/roles/{{role_id}}`.<br/>  stage: The current launch stage of the role.</pre> |
 | project_details | A google_project data source of the managed project.<br/>For details see: https://registry.terraform.io/providers/hashicorp/google/latest/docs/data-sources/project |
 | project_id | GCP project ID |
