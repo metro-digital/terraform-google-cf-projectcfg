@@ -23,16 +23,14 @@
 
 ## Versioning
 
-The module implements [Semantic Versioning], means non-breaking feature me be
-added within the major release, but any breaking change will cause a new major
-version.
+The module implements [Semantic Versioning], means non-breaking feature me be added within the major
+release, but any breaking change will cause a new major version.
 
 > [!TIP]
-> We clearly recommend to limit potential automatic updates of the module to the
-> current major version you are using.
+> We clearly recommend to limit potential automatic updates of the module to the current major
+> version you are using.
 
-Assuming you are using the `v3` major version, you should dome something like
-this:
+Assuming you are using the `v3` major version, you should dome something like this:
 
 ```hcl
 module "projectcfg" {
@@ -42,8 +40,8 @@ module "projectcfg" {
 }
 ```
 
-Assuming a new, non-breaking feature was added in `v3.1.0` you are using, your
-constraint should like this:
+Assuming a new, non-breaking feature was added in `v3.1.0` you are using, your constraint should
+like this:
 
 ```hcl
 module "projectcfg" {
@@ -65,8 +63,8 @@ For some reason there's already a network called default in your project.
 
 *Option A:* Delete the network using the UI or via `gcloud` CLI
 
-*Option B:* Import the network into your terraform state (may also result into a
-deletion at next terraform run depending on the networks configuration)
+*Option B:* Import the network into your terraform state (may also result into a deletion at next
+terraform run depending on the networks configuration)
 
 See also:
 
@@ -75,23 +73,20 @@ See also:
 
 ### `Error waiting for Create Service Networking Connection: Error code 7, message: Required 'compute.globalAddresses.list' permission for 'projects/\<project_number>'`
 
-This module makes sure that the `servicenetworking.googleapis.com` service is
-enabled. Our bootstrap script also activates the service. Activating this
-service creates an internal google service account
-`service-<project_number>@service-networking.iam.gserviceaccount.com` binded to
-a `servicenetworking.serviceAgent` role. This service and its properly
-configured internal service account are crucial for many parts of the code
-around network operations.
+This module makes sure that the `servicenetworking.googleapis.com` service is enabled. Our bootstrap
+script also activates the service. Activating this service creates an internal google service
+account `service-<project_number>@service-networking.iam.gserviceaccount.com` binded to a
+`servicenetworking.serviceAgent` role. This service and its properly configured internal service
+account are crucial for many parts of the code around network operations.
 
-For some reason like, for example, a human error or a faulty terraform code,
-sometimes you might end up in a situation when terraform fails with an error
-from above due to missing needed role binding. In some cases errors might look a
-bit different and hard to track to exact problems as you might try to make sure
-that your IAC account has permissions from the error message, and it would have
-it, leaving you with no clue what is wrong.
+For some reason like, for example, a human error or a faulty terraform code, sometimes you might end
+up in a situation when terraform fails with an error from above due to missing needed role binding.
+In some cases errors might look a bit different and hard to track to exact problems as you might try
+to make sure that your IAC account has permissions from the error message, and it would have it,
+leaving you with no clue what is wrong.
 
-If you encounter such cases please make sure the service's internal service
-account has proper binding. Add needed role in UI or with help of `gcloud`:
+If you encounter such cases please make sure the service's internal service account has proper
+binding. Add needed role in UI or with help of `gcloud`:
 
 ```shell
 gcloud projects add-iam-policy-binding <project_id> \
@@ -103,13 +98,11 @@ gcloud projects add-iam-policy-binding <project_id> \
 
 ### How to Import Existing IAM Policy
 
-If you want to manage an already existing project, this project very likely
-already has some (more or less) complex IAM policy bound to it. To simplify the
-migration towards our project you can import the existing policy into your
-terraform state before applying, this will result in terraform showing you all
-the changes it would do to this policy. If you don't import the policy terraform
-threads the policy as non-existing and overwrites it without showing you the
-differences.
+If you want to manage an already existing project, this project very likely already has some (more
+or less) complex IAM policy bound to it. To simplify the migration towards our project you can
+import the existing policy into your terraform state before applying, this will result in terraform
+showing you all the changes it would do to this policy. If you don't import the policy terraform
+threads the policy as non-existing and overwrites it without showing you the differences.
 
 **Option 1:** Import via command line:
 
@@ -128,8 +121,7 @@ import {
 
 ### How to Grant Project Level Permissions to a Service Account
 
-You can grant project level permissions to a service account using the `roles`
-input
+You can grant project level permissions to a service account using the `roles` input
 
 ```hcl
 module "projectcfg" {
@@ -156,28 +148,26 @@ module "projectcfg" {
 }
 ```
 
-Please note the empty `iam` parameter inside the service account definition.
-This is used for IAM rules applied to the service account as resource. See
-[How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation)
-or
+Please note the empty `iam` parameter inside the service account definition. This is used for IAM
+rules applied to the service account as resource. See
+[How can I allow Service Account impersonation?](#how-can-i-allow-service-account-impersonation) or
 [Can I use GKE Workload Identify with this module?](#can-i-use-gke-workload-identify-with-this-module)
 how to use this.
 
 ### How Can I Allow Service Account Impersonation?
 
-You can grant some other member permissions to impersonate a specific service
-account by granting the role `roles/iam.serviceAccountTokenCreator`.
+You can grant some other member permissions to impersonate a specific service account by granting
+the role `roles/iam.serviceAccountTokenCreator`.
 
 This role can be granted on
 
 - project level IAM policy
 - resource level IAM policy
 
-Resource level IAM policy means the IAM policy assigned to a specific service
-account, considering the service account as a resource. **It's recommended to
-grant the role on resource level** to ensure the given member can only
-impersonate specific service accounts. Granting it on project level will allow
-the member to impersonate all service accounts within the project!
+Resource level IAM policy means the IAM policy assigned to a specific service account, considering
+the service account as a resource. **It's recommended to grant the role on resource level** to
+ensure the given member can only impersonate specific service accounts. Granting it on project level
+will allow the member to impersonate all service accounts within the project!
 
 ```hcl
 module "projectcfg" {
@@ -206,13 +196,12 @@ module "projectcfg" {
 
 ### Can I Use GKE Workload Identity With This Module?
 
-Yes you can! Just create the service account(s) with correct IAM permissions and
-map them to your Kubernetes service account. If you configure this Service
-Account for a pod, the pod will run with permissions of that GCP Service
-Account.
+Yes you can! Just create the service account(s) with correct IAM permissions and map them to your
+Kubernetes service account. If you configure this Service Account for a pod, the pod will run with
+permissions of that GCP Service Account.
 
-In the following example, the service account `bq` inside the Kubernetes
-namespace `default` is mapped to the IAM service account `bq-reader`.
+In the following example, the service account `bq` inside the Kubernetes namespace `default` is
+mapped to the IAM service account `bq-reader`.
 
 ```hcl
 module "projectcfg" {
@@ -248,10 +237,9 @@ module "projectcfg" {
 
 ### How to Use Workload Identity Federation With GitHub Actions
 
-The module allows you to configure the authentication within GitHub actions
-using Workload Identity Federation. To allow the use of a service account within
-a GitHub workflow run, you need to set the repository as a parameter for the
-service account:
+The module allows you to configure the authentication within GitHub actions using Workload Identity
+Federation. To allow the use of a service account within a GitHub workflow run, you need to set the
+repository as a parameter for the service account:
 
 ```hcl
 module "projectcfg" {
@@ -276,17 +264,15 @@ module "projectcfg" {
 }
 ```
 
-**Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to
-the principal that is executing the terraform code (most likely your service
-account used in your pipeline) if you plan to use `github_action_repositories`.
+**Remark:** You need to grant the role `roles/iam.workloadIdentityPoolAdmin` to the principal that
+is executing the terraform code (most likely your service account used in your pipeline) if you plan
+to use `github_action_repositories`.
 
-Setting the `github_action_repositories` parameter will create a default
-Workload Identity Pool named "github-actions" and a Workload Identity Pool
-provider, named "GitHub". This is reflected in the code snippet below under
-`workload_identity_provider`. You need to set the `permissions` block to grant
-your id-token the intended permissions. After that, you can use this
-[GitHub action](https://github.com/google-github-actions/auth) to authenticate
-inside your flow:
+Setting the `github_action_repositories` parameter will create a default Workload Identity Pool
+named "github-actions" and a Workload Identity Pool provider, named "GitHub". This is reflected in
+the code snippet below under `workload_identity_provider`. You need to set the `permissions` block
+to grant your id-token the intended permissions. After that, you can use this
+[GitHub action](https://github.com/google-github-actions/auth) to authenticate inside your flow:
 
 ```yaml
 jobs:
@@ -323,27 +309,25 @@ If you are facing an error similar to this:
 Error creating WorkloadIdentityPool: googleapi: Error 403: Permission 'iam.workloadIdentityPools.create' denied on resource '//iam.googleapis.com/projects/<GCP PROJECT>/locations/global' (or it may not exist).
 ```
 
-You may need to grant `roles/iam.workloadIdentityPoolAdmin` to your service
-account. This is also the case if you grant the role via this module; even if
-the pool itself has some dependency on the IAM permission, terraform may not
-wait long enough. Please be aware Google Cloud Platform may need a few minutes
-to pick up this IAM change; if you still see the error after granting the role,
-please wait a few minutes and try again. If the error persists, feel free to
-reach out to the Cloud Foundation team if needed.
+You may need to grant `roles/iam.workloadIdentityPoolAdmin` to your service account. This is also
+the case if you grant the role via this module; even if the pool itself has some dependency on the
+IAM permission, terraform may not wait long enough. Please be aware Google Cloud Platform may need a
+few minutes to pick up this IAM change; if you still see the error after granting the role, please
+wait a few minutes and try again. If the error persists, feel free to reach out to the Cloud
+Foundation team if needed.
 
 ### `Error creating WorkloadIdentityPool - Error 409: Requested entity already exists`
 
-This usually happens if you created the pool via terraform and destroyed it
-again. To solve the issue you need to:
+This usually happens if you created the pool via terraform and destroyed it again. To solve the
+issue you need to:
 
-1. Grant yourself `roles/iam.workloadIdentityPoolAdmin` on the project, and
-   navigate to [workload identity pools].
+1. Grant yourself `roles/iam.workloadIdentityPoolAdmin` on the project, and navigate to
+   [workload identity pools].
 1. Enable `Show deleted pools and providers`
 1. Restore the pool with ID `github-actions`
 1. Restore the pool provider with ID `github`
 
-After you restored your pool and provider, you need to import them into your
-terraform state:
+After you restored your pool and provider, you need to import them into your terraform state:
 
 ```shell
 export GCP_PROJECT_ID="<YOUR GOOGLE PROJECT ID>"
@@ -356,11 +340,10 @@ terraform import 'module.projectcfg.google_iam_workload_identity_pool_provider.g
 ### How to use Workload Identity Federation
 
 Cloud Native Runtime clusters support
-[Workload Identity Federation via OIDC provider](https://confluence.metrosystems.net/x/rLT3Ig).
-For details on the Kubernetes-related configuration, please see the
-documentation provided by the Runtime team. Within your Cloud Foundation
-project, you need to set up a Workload Identity Pool and attach an OIDC provider
-per cluster. This is done by this module automatically, if you configure a
+[Workload Identity Federation via OIDC provider](https://confluence.metrosystems.net/x/rLT3Ig). For
+details on the Kubernetes-related configuration, please see the documentation provided by the
+Runtime team. Within your Cloud Foundation project, you need to set up a Workload Identity Pool and
+attach an OIDC provider per cluster. This is done by this module automatically, if you configure a
 service account to be used from a Runtime kubernetes cluster:
 
 ```hcl
@@ -401,8 +384,7 @@ module "projectcfg" {
 }
 ```
 
-Within your Kubernetes configuration, adjust the service account definition like
-this:
+Within your Kubernetes configuration, adjust the service account definition like this:
 
 ```yaml
 apiVersion: v1
@@ -416,12 +398,12 @@ metadata:
   name: <K8s service account name>
 ```
 
-Ensure you replace service account E-Mail, Project Number and MD5 Sum of Runtime
-Cluster ID with the correct values.
+Ensure you replace service account E-Mail, Project Number and MD5 Sum of Runtime Cluster ID with the
+correct values.
 
 You can get the project number using the UI by navigating to your
-[project's dashboard](https://console.cloud.google.com/home/dashboard) or via
-the following gcloud command:
+[project's dashboard](https://console.cloud.google.com/home/dashboard) or via the following gcloud
+command:
 
 ```shell
 gcloud projects describe YOUR_GCP_PROJECT_ID --format='value(projectNumber)'
