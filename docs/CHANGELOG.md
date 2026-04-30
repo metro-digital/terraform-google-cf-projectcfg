@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.5.1](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.5.0...v3.5.1) (2026-04-30)
+
+
+### Bug Fixes
+
+* invalid count argument ([778e9b2](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/778e9b2c242b61292767d3223e79e9ceecf1c1be))
+
 ## [3.5.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.4.0...v3.5.0) (2026-03-13)
 
 
