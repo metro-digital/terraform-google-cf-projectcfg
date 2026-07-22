@@ -109,6 +109,7 @@ done
 check_program gcloud
 check_program jq
 check_program terraform
+check_program curl
 
 # parameter validation / defaulting
 SA_NAME="${SA_NAME_PARAM:-terraform-iac-pipeline}"
@@ -197,6 +198,78 @@ MANAGER_GROUP="${IAM_MANAGER_GROUP#group:}"
 DEVELOPER_GROUP="${IAM_DEVELOPER_GROUP#group:}"
 OBSERVER_GROUP="${IAM_OBSERVER_GROUP#group:}"
 
+# Check application default credential setup
+# 1. no env variable
+if [ "${GOOGLE_APPLICATION_CREDENTIALS:-notset}" != "notset" ]; then
+	log_error "You configured the Application Default Credentials using the 'GOOGLE_APPLICATION_CREDENTIALS' environment variable. This is not supported by the bootstrap script! Please unset the environment variable." 1>&2
+	exit 1
+fi
+
+# 2. ensure credentials use currently active gcloud user
+ADC_ERROR=""
+ADC_ACCESS_TOKEN=""
+if ! ADC_ACCESS_TOKEN="$(gcloud auth application-default print-access-token 2>&1)"; then
+	ADC_ERROR="${ADC_ACCESS_TOKEN}"
+	ADC_ACCESS_TOKEN=""
+fi
+
+if [ -z "${ADC_ACCESS_TOKEN}" ]; then
+	echo "${TEXT_COLOR_RED}Application Default Credentials are not set up!${TEXT_ALL_OFF}"
+	if [ -n "${ADC_ERROR}" ]; then
+		echo "Details: ${ADC_ERROR}"
+	fi
+	read -p "Configure them for the account '${ACTIVE_GCLOUD_ACCOUNT}' (y/n)? " -n 1 -r
+	echo
+	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+		log_error "Aborted."
+		exit 1
+	fi
+	echo
+	if ! gcloud auth application-default login; then
+		log_error "Error occurred during Application Default Credentials setup ... can't proceed"
+		exit 1
+	fi
+	echo
+else
+	# check if ADC user matches gcloud user
+	ADC_USERINFO_ERROR=""
+	ADC_USERINFO_RESP=""
+	if ! ADC_USERINFO_RESP="$(curl -s -f -H "Authorization: Bearer ${ADC_ACCESS_TOKEN}" https://www.googleapis.com/oauth2/v2/userinfo 2>&1)"; then
+		ADC_USERINFO_ERROR="${ADC_USERINFO_RESP}"
+		ADC_USERINFO_RESP=""
+	fi
+
+	if [ -n "${ADC_USERINFO_ERROR}" ]; then
+		log_error "Failed to retrieve Application Default Credentials user info. Check your network or credentials."
+		echo "Details: ${ADC_USERINFO_ERROR}"
+		exit 1
+	fi
+
+	ADC_ACCOUNT="$(echo "${ADC_USERINFO_RESP}" | jq -r '.email' 2>/dev/null || true)"
+	if [ -z "${ADC_ACCOUNT}" ] || [ "${ADC_ACCOUNT}" = "null" ]; then
+		log_error "Unable to parse email from Application Default Credentials user info response."
+		echo "Details: ${ADC_USERINFO_RESP}"
+		exit 1
+	fi
+
+	echo "Application Default Credentials account: ${ADC_ACCOUNT}"
+	if [ "${ADC_ACCOUNT}" != "${ACTIVE_GCLOUD_ACCOUNT}" ]; then
+		log_error "Your active gcloud account is '${ACTIVE_GCLOUD_ACCOUNT}', but Application Default Credentials are configured for '${ADC_ACCOUNT}'. They must be the same!"
+		read -p "Re-configure Application Default Credentials for '${ACTIVE_GCLOUD_ACCOUNT}' (y/n)? " -n 1 -r
+		echo
+		if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+			log_error "Aborted."
+			exit 1
+		fi
+		echo
+		if ! gcloud auth application-default login; then
+			log_error "Error occurred during Application Default Credentials setup ... can't proceed"
+			exit 1
+		fi
+		echo
+	fi
+fi
+
 # all set - print details to user and ask to continue
 cat <<-EOF
 
@@ -208,6 +281,8 @@ cat <<-EOF
 	with ID '${GCP_PROJECT_ID}'.
 
 	${TEXT_BOLD}Currently active gcloud account:${TEXT_ALL_OFF} ${ACTIVE_GCLOUD_ACCOUNT}
+	${TEXT_BOLD}Currently active Application Default Credentials account:${TEXT_ALL_OFF} ${ADC_ACCOUNT}
+
 	${TEXT_BOLD}Detected manager group:${TEXT_ALL_OFF} ${MANAGER_GROUP}
 	${TEXT_BOLD}Detected developer group:${TEXT_ALL_OFF} ${DEVELOPER_GROUP}
 	${TEXT_BOLD}Detected observer group:${TEXT_ALL_OFF} ${OBSERVER_GROUP}
@@ -245,30 +320,6 @@ echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 	log_error "Aborted."
 	exit 1
-fi
-
-# Check application default credential setup
-# 1. no env variable
-if [ "${GOOGLE_APPLICATION_CREDENTIALS:-notset}" != "notset" ]; then
-	log_error "You configured the Application Default Credentials using the 'GOOGLE_APPLICATION_CREDENTIALS' environment variable. This is not supported by the bootstrap script! Please unset the environment variable." 1>&2
-	exit 1
-fi
-
-# 2. ensure credentials use currently active gcloud user
-if ! gcloud auth application-default print-access-token >/dev/null 2>&1; then
-	echo "${TEXT_COLOR_RED}Application Default Credentials are not set up!${TEXT_ALL_OFF}"
-	read -p "Configure them for the account '${ACTIVE_GCLOUD_ACCOUNT}' (y/n)? " -n 1 -r
-	echo
-	if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-		log_error "Aborted."
-		exit 1
-	fi
-	echo
-	if ! gcloud auth application-default login; then
-		log_error "Error occurred during Application Default Credentials setup ... can't proceed"
-		exit 1
-	fi
-	echo
 fi
 
 if [[ ! -d "${OUTPUT_DIR}" ]]; then
@@ -320,6 +371,7 @@ export TF_WORKSPACE="${GCP_PROJECT_ID}"
 
 cat <<-EOF >"terraform/generated-${GCP_PROJECT_ID}.tfvars"
 	project="${GCP_PROJECT_ID}"
+	active_gcloud_account="${ACTIVE_GCLOUD_ACCOUNT}"
 	manager_group="${MANAGER_GROUP}"
 	developer_group="${DEVELOPER_GROUP}"
 	observer_group="${OBSERVER_GROUP}"

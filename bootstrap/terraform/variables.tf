@@ -66,3 +66,15 @@ variable "output_dir" {
   type        = string
   default     = "iac-output"
 }
+
+variable "active_gcloud_account" {
+  description = "The active account configured in gcloud CLI"
+
+  type    = string
+  default = ""
+
+  validation {
+    condition     = var.active_gcloud_account != ""
+    error_message = "The active_gcloud_account variable must not be empty."
+  }
+}
