@@ -12,5 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# outputs.tf file is empty as no outputs are used
-# Reference: https://github.com/terraform-linters/tflint-ruleset-terraform/blob/v0.5.0/docs/rules/terraform_standard_module_structure.md
+output "current_user" {
+  description = "The email address of the authenticated Google client (provider user)"
+  value       = data.google_client_openid_userinfo.provider.email
+}
+
+output "gcloud_user" {
+  description = "The active account configured in gcloud CLI passed to the bootstrap"
+  value       = var.active_gcloud_account
+}
