@@ -180,3 +180,12 @@ resource "time_sleep" "final" {
     google_storage_bucket.this,
   ]
 }
+
+data "google_client_openid_userinfo" "provider" {
+  lifecycle {
+    postcondition {
+      condition     = self.email == var.active_gcloud_account
+      error_message = "Your active gcloud account (${var.active_gcloud_account}) does not match the Terraform Google provider / Application Default Credentials account (${self.email != null ? self.email : "null"}). Please run 'gcloud auth login --update-adc' to log in and sync credentials, or check if the GOOGLE_APPLICATION_CREDENTIALS environment variable is set."
+    }
+  }
+}

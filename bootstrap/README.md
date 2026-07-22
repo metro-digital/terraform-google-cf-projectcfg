@@ -23,6 +23,7 @@ Make sure that you have installed the following dependencies on your machine.
 - [Google Cloud SDK (`gcloud`)](https://cloud.google.com/sdk/docs/install-sdk)
 - [Terraform v1.5.0 or newer](https://developer.hashicorp.com/terraform/downloads)
 - [jq](https://jqlang.github.io/jq/)
+- [curl](https://curl.se/)
 
 ## Getting Started
 
