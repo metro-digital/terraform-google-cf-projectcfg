@@ -138,6 +138,34 @@ locals {
     )
   }
 
+  # Regex matching the member string of the service account created by the Cloud Foundation Datadog building block.
+  # The building block creates a service account named `cf-bb-datadog-integration-<4 random chars>` inside the project
+  # managed by this module.
+  datadog_building_block_member_regex = format(
+    "^serviceAccount:cf-bb-datadog-integration-[a-z0-9]{4}@%s\\.iam\\.gserviceaccount\\.com$",
+    data.google_project.this.project_id
+  )
+
+  # Keep all existing project level bindings of the Datadog building block service account. Only the members matching
+  # the service account are kept, all other members of the very same binding stay authoritative.
+  project_iam_datadog_building_block_bindings = {
+    for binding in jsondecode(data.google_project_iam_policy.this.policy_data).bindings :
+    # key may needs to contain hashed IAM condition
+    (lookup(binding, "condition", null) == null ? binding.role : "${binding.role}#${sha1(jsonencode(binding.condition))}") => {
+      role      = binding.role
+      condition = lookup(binding, "condition", null)
+      members = [
+        for member in binding.members : member
+        if can(regex(local.datadog_building_block_member_regex, member))
+      ]
+    }
+    if(
+      var.ignore_datadog_building_block &&
+      !var.non_cf_panel_project &&
+      anytrue([for member in binding.members : can(regex(local.datadog_building_block_member_regex, member))])
+    )
+  }
+
   # We currently do not support IAM conditions for the project level role assignment via service accounts input
   project_iam_service_account_bindings = {
     for role, members in transpose({
@@ -170,7 +198,8 @@ locals {
     keys(local.project_iam_service_account_bindings),
     keys(local.project_iam_always_existing_bindings),
     keys(local.project_iam_non_authoritative_role_bindings),
-    keys(local.project_iam_pam_bindings)
+    keys(local.project_iam_pam_bindings),
+    keys(local.project_iam_datadog_building_block_bindings)
   )))
 
   # Merging all different kind of binding sources (always existing ones, user input, non-authoritative roles, PAM, ..)
@@ -183,7 +212,8 @@ locals {
         [lookup(local.project_iam_service_account_bindings, role, { role = "" }).role],
         [lookup(local.project_iam_always_existing_bindings, role, { role = "" }).role],
         [lookup(local.project_iam_non_authoritative_role_bindings, role, { role = "" }).role],
-        [lookup(local.project_iam_pam_bindings, role, { role = "" }).role]
+        [lookup(local.project_iam_pam_bindings, role, { role = "" }).role],
+        [lookup(local.project_iam_datadog_building_block_bindings, role, { role = "" }).role]
       )))[0]
       # filter out deleted principals as they cant be used in IAM policies
       members = [for member in distinct(compact(concat(
@@ -192,7 +222,8 @@ locals {
         lookup(local.project_iam_service_account_bindings, role, { members = [] }).members,
         lookup(local.project_iam_always_existing_bindings, role, { members = [] }).members,
         lookup(local.project_iam_non_authoritative_role_bindings, role, { members = [] }).members,
-        lookup(local.project_iam_pam_bindings, role, { members = [] }).members
+        lookup(local.project_iam_pam_bindings, role, { members = [] }).members,
+        lookup(local.project_iam_datadog_building_block_bindings, role, { members = [] }).members
       ))) : member if !startswith(member, "deleted:")]
       condition = one([for condition in flatten([
         [lookup(local.project_iam_policy_bindings, role, { condition = null }).condition],
@@ -201,6 +232,7 @@ locals {
         [lookup(local.project_iam_always_existing_bindings, role, { condition = null }).condition],
         [lookup(local.project_iam_non_authoritative_role_bindings, role, { condition = null }).condition],
         [lookup(local.project_iam_pam_bindings, role, { condition = null }).condition],
+        [lookup(local.project_iam_datadog_building_block_bindings, role, { condition = null }).condition],
       ]) : condition if condition != null])
     }
   }
