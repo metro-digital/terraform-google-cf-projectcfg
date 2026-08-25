@@ -318,6 +318,20 @@ variable "iam_policy_keep_pam_bindings" {
   nullable    = false
 }
 
+variable "ignore_datadog_building_block" {
+  description = <<-EOD
+    When set to true, the module ignores (keeps) all project level IAM bindings of the service account created by the
+    Cloud Foundation Datadog building block. The service account is named `cf-bb-datadog-integration-<random suffix>`
+    and lives inside the project managed by this module.
+
+    This setting has no effect if `non_cf_panel_project` is set to true, as the building block is only available for
+    projects managed via the Cloud Foundation Panel.
+  EOD
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "custom_roles" {
   description = <<-EOD
     Create custom roles and define who gains that role on project level. If your project level IAM binding needs to set
