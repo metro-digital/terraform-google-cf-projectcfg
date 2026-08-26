@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.6.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.5.1...v3.6.0) (2026-08-26)
+
+
+### Features
+
+* add ignore_datadog_building_block input variable ([8e78543](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/8e78543f4166af232689f78f339b915cfdf68321))
+
 ## [3.5.1](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.5.0...v3.5.1) (2026-04-30)
 
 
