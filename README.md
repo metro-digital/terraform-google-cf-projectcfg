@@ -34,7 +34,7 @@ To find out how to bootstrap a project, check out the dedicated
 ```hcl
 module "projectcfg" {
   source  = "metro-digital/cf-projectcfg/google"
-  version = "~> 3.5"
+  version = "~> 3.6"
 
   project_id = "cf-example-project"
 }
