@@ -52,7 +52,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Create or update the PR test comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           TEST_RESULTS_DIR: ${{ runner.temp }}/terraform-test-results
         with:
