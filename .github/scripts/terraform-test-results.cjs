@@ -14,6 +14,7 @@
 
 // Shared artifact validation and Markdown rendering for both reporting workflows.
 const VERSION = /^\d+\.\d+\.\d+$/;
+const MAJOR = /^(0|[1-9]\d*)$/;
 const OUTCOMES = {
   success: '✅ Passed',
   failure: '❌ Failed',
@@ -26,8 +27,11 @@ const MOCK_NOTE = 'Both Google providers are mocked; tests create no cloud resou
 // Artifacts are untrusted PR data. Accept only versions and fixed outcomes;
 // generate all Markdown here instead of copying artifact text into the comment.
 function validateResult(result) {
+  // Validate artifact formats independently of the PR's test matrix. The trusted
+  // publisher on the default branch must also accept newly tested provider majors.
   if (typeof result.requested_terraform !== 'string' || !VERSION.test(result.requested_terraform)
-      || !['6', '7'].includes(result.provider_major)) {
+      || typeof result.provider_major !== 'string' || !MAJOR.test(result.provider_major)
+      || !Number.isSafeInteger(Number(result.provider_major))) {
     throw new Error('Invalid test matrix identifiers');
   }
   for (const key of ['terraform', 'google', 'google_beta']) {

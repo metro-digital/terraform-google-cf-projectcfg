@@ -101,7 +101,9 @@ results for jobs that were not rerun.
 
 The comment publisher uses `workflow_run` so it can also comment on fork PRs while test jobs retain
 read-only repository permissions. It runs only trusted code from the default branch and validates
-the uploaded result data before creating Markdown. GitHub activates this publisher only after its
+the uploaded result data before creating Markdown. Validation checks version formats and fixed check
+outcomes rather than a list of provider majors, so a PR can extend the test matrix without first
+updating the publisher on the default branch. GitHub activates this publisher only after its
 workflow and script exist on the repository's default branch.
 
 The full suite uses Terraform 1.16 or later because older releases have an
