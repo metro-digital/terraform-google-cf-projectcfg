@@ -1,4 +1,4 @@
-# Copyright 2024 METRO Digital GmbH
+# Copyright 2026 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ repos:
       - id: mixed-line-ending
         args: ['--fix', 'lf']
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: d0e12caebb2ab0ee8bf98181c8bfe9702bca103d  # frozen: v1.105.0
+    rev: 80c8033123f6d6b9ccd1a9458562ea4180742af7  # frozen: v1.109.2
     hooks:
       - id: terraform_fmt
       - id: terraform_tflint
@@ -53,6 +53,8 @@ repos:
     rev: 2d496dbc18e31b83a1596685347ffe0b6041daf0  # frozen: 1.0.0
     hooks:
       - id: mdformat
+        # terraform-docs owns this generated document.
+        exclude: ^docs/TERRAFORM\.md$
         # Optionally add plugins
         additional_dependencies:
           - mdformat-gfm
@@ -60,7 +62,7 @@ repos:
           - mdformat-shfmt
           - mdformat-toc
   - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
-    rev: 1f6454da22d006d5bb0d2e65c96c43c23c8a534f  # frozen: v9.24.0
+    rev: 1f1ac45c93d1c2ce36b71330252c489a5f4f2724  # frozen: v9.27.0
     hooks:
       - id: commitlint
         stages: [commit-msg]
