@@ -56,6 +56,67 @@ The following dependencies must be installed on the development system:
 - [pre-commit framework][pcf] and all the configured pre-commit hooks (run `pre-commit install`) and
   their external binaries (if needed).
 
+## Unit Tests
+
+Run the root module's full unit suite with Terraform 1.16 or later:
+
+```sh
+terraform init -backend=false -input=false
+terraform test
+```
+
+The tests in `tests/*.tftest.hcl` mock both the `google` and `google-beta` providers. Most runs use
+`command = plan`. Service-account IAM and federation tests use mocked applies to resolve computed
+identities and policy reads that are deferred until resources exist. They need no Google Cloud
+credentials and create no cloud resources. Initialization downloads provider plugins; Terraform
+still uses their schemas to validate the configuration. Shared deterministic fixtures live in
+`tests/mocks/`.
+
+The initial suite covers minimal project defaults, API enablement, panel and non-panel IAM,
+authoritative IAM composition and preservation, service-account IAM, regional networking and NAT,
+GitHub and Kubernetes workload identity federation, and invalid inputs. IAM assertions inspect
+composed bindings because the mocked `google_iam_policy` data source does not serialize real policy
+JSON. These unit tests exercise module logic; they do not verify Google API behavior or replace
+integration tests against a real project. The separate `bootstrap/terraform` generator is outside
+this suite's scope.
+
+The `terraform-test` GitHub Actions workflow runs formatting, validation, and the full unit suite on
+every pull request. It discovers stable Terraform releases from HashiCorp's release index and
+selects the latest patch release of every major/minor series from 1.16 onward, excluding
+prereleases. New stable Terraform series and patch releases are picked up automatically. The matrix
+crosses these Terraform versions with the latest available 6.x and 7.x releases of both `google` and
+`google-beta`, covering each provider major supported by the module. Each job creates a temporary
+Terraform override file to constrain both providers to its selected major and initializes with
+`-upgrade` so an existing lock file cannot retain a different version. The module's published
+provider constraints remain unchanged. All matrix jobs must succeed for the workflow to pass.
+Maintainers can make these checks required in the repository's branch protection settings. Each
+matrix job publishes its exact Terraform and provider versions plus check outcomes to the GitHub
+Actions run summary, including failed or skipped checks. The job summary and PR comment share the
+same result validation and Markdown renderer in `.github/scripts/terraform-test-results.cjs`.
+
+After the test run completes, `terraform-test-comment` combines the matrix results into a single bot
+comment on the PR and updates that comment on subsequent runs and reruns. It ignores results for an
+outdated PR commit or run attempt. Partial reruns replace the rerun jobs' artifacts and retain
+results for jobs that were not rerun.
+
+The comment publisher uses `workflow_run` so it can also comment on fork PRs while test jobs retain
+read-only repository permissions. It runs only trusted code from the default branch and validates
+the uploaded result data before creating Markdown. GitHub activates this publisher only after its
+workflow and script exist on the repository's default branch.
+
+The full suite uses Terraform 1.16 or later because older releases have an
+[upstream test/apply bug](https://github.com/hashicorp/terraform/issues/38974) with optional
+ephemeral variables, including this module's legacy `roles` migration safeguard.
+
+When adding coverage, use the shared mocks and assert observable configuration, binding contents, or
+outputs. Prefer plan-only runs and keep both providers mocked. Use a mocked apply only when a
+dependency defers the values being asserted until apply. For validation failures, use
+`expect_failures` with the variable or resource that owns the validation. To run one test file:
+
+```sh
+terraform test -filter=tests/network.tftest.hcl
+```
+
 ## Releasing a New Version
 
 We rely on [release-please] to generate new releases. release-please also updates the references to

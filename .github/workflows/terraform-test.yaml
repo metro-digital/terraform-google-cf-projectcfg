@@ -1,0 +1,137 @@
+# Copyright 2026 METRO Digital GmbH
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+name: terraform-test
+
+on:  # yamllint disable-line rule:truthy
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  discover-terraform-versions:
+    name: Discover Terraform test versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      terraform-versions: ${{ steps.versions.outputs.terraform-versions }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Record pull request for the comment publisher
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >-
+          python3 -c 'import json, os; json.dump({"number": int(os.environ["PR_NUMBER"]),
+          "head_sha": os.environ["PR_HEAD_SHA"]}, open("pr.json", "w"))'
+
+      - name: Upload pull request metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: terraform-test-pr
+          path: pr.json
+          overwrite: true
+          retention-days: 14
+
+      - name: Select latest stable patch per Terraform series
+        id: versions
+        # Terraform >= 1.16 supports test applies with the optional ephemeral
+        # roles input (hashicorp/terraform#38974). Exclude prerelease versions.
+        run: python3 .github/scripts/terraform-test-matrix.py >> "$GITHUB_OUTPUT"
+
+  unit-tests:
+    name: Unit tests (Terraform ${{ matrix.terraform-version }}, Google ${{ matrix.google-provider-major }}.x)
+    needs: discover-terraform-versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        terraform-version: ${{ fromJSON(needs.discover-terraform-versions.outputs.terraform-versions) }}
+        google-provider-major: ['6', '7']
+    env:
+      TF_IN_AUTOMATION: 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: ${{ matrix.terraform-version }}
+          terraform_wrapper: false
+
+      - name: Check test formatting
+        id: format
+        run: terraform fmt -check -recursive tests
+
+      - name: Select provider major
+        env:
+          GOOGLE_PROVIDER_MAJOR: ${{ matrix.google-provider-major }}
+        run: |
+          # Restrict both providers for this job without changing the module's
+          # published constraints. Terraform merges this override with versions.tf.
+          cat > ci-provider-versions_override.tf <<EOF
+          terraform {
+            required_providers {
+              google = {
+                source  = "hashicorp/google"
+                version = "~> ${GOOGLE_PROVIDER_MAJOR}.0"
+              }
+              google-beta = {
+                source  = "hashicorp/google-beta"
+                version = "~> ${GOOGLE_PROVIDER_MAJOR}.0"
+              }
+            }
+          }
+          EOF
+
+      - name: Initialize providers
+        id: init
+        run: terraform init -backend=false -input=false -upgrade
+
+      - name: Validate module
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Run unit tests
+        id: tests
+        run: terraform test -no-color
+
+      - name: Publish tested versions and results
+        if: always()
+        env:
+          TERRAFORM_VERSION: ${{ matrix.terraform-version }}
+          GOOGLE_PROVIDER_MAJOR: ${{ matrix.google-provider-major }}
+          FORMAT_OUTCOME: ${{ steps.format.outcome }}
+          INIT_OUTCOME: ${{ steps.init.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          TEST_OUTCOME: ${{ steps.tests.outcome }}
+          TEST_RESULT_FILE: result.json
+        run: node .github/scripts/terraform-test-summary.cjs
+
+      - name: Upload matrix result for the PR comment
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: terraform-test-result-${{ matrix.terraform-version }}-google${{ matrix.google-provider-major }}
+          path: result.json
+          if-no-files-found: warn
+          # Replace rerun jobs while preserving results of jobs not rerun.
+          overwrite: true
+          retention-days: 14
