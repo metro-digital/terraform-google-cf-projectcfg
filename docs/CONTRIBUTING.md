@@ -88,11 +88,13 @@ crosses these Terraform versions with the latest available 6.x and 7.x releases 
 `google-beta`, covering each provider major supported by the module. Each job creates a temporary
 Terraform override file to constrain both providers to its selected major and initializes with
 `-upgrade` so an existing lock file cannot retain a different version. The module's published
-provider constraints remain unchanged. All matrix jobs must succeed for the workflow to pass.
-Maintainers can make these checks required in the repository's branch protection settings. Each
-matrix job publishes its exact Terraform and provider versions plus check outcomes to the GitHub
-Actions run summary, including failed or skipped checks. The job summary and PR comment share the
-same result validation and Markdown renderer in `.github/scripts/terraform-test-results.cjs`.
+provider constraints remain unchanged. All matrix jobs must succeed for the workflow to pass. The
+`Pipeline Status` workflow uses `DataDog/ensure-ci-success` to wait for the PR's checks and commit
+statuses and fail if any fail. Require its `pipeline-status` check in the repository's branch
+protection ruleset to provide a single gate as individual checks evolve. Each matrix job publishes
+its exact Terraform and provider versions plus check outcomes to the GitHub Actions run summary,
+including failed or skipped checks. The job summary and PR comment share the same result validation
+and Markdown renderer in `.github/scripts/terraform-test-results.cjs`.
 
 After the test run completes, `terraform-test-comment` combines the matrix results into a single bot
 comment on the PR and updates that comment on subsequent runs and reruns. It ignores results for an
