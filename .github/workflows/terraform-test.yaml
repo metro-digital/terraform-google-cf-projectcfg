@@ -63,7 +63,7 @@ jobs:
       fail-fast: false
       matrix:
         terraform-version: ${{ fromJSON(needs.discover-terraform-versions.outputs.terraform-versions) }}
-        google-provider-major: ['6', '7']
+        google-provider-major: ['6', '7', '8']
     env:
       TF_IN_AUTOMATION: 'true'
     steps:

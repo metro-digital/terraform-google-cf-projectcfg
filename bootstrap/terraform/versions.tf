@@ -16,12 +16,12 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "~> 7.0"
+      version = "~> 8.0"
     }
     # The beta provider is needed because the module uses google_project_service_identity
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "~> 7.0"
+      version = "~> 8.0"
     }
     local = {
       source  = "hashicorp/local"

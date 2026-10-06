@@ -84,10 +84,10 @@ The `terraform-test` GitHub Actions workflow runs formatting, validation, and th
 every pull request. It discovers stable Terraform releases from HashiCorp's release index and
 selects the latest patch release of every major/minor series from 1.16 onward, excluding
 prereleases. New stable Terraform series and patch releases are picked up automatically. The matrix
-crosses these Terraform versions with the latest available 6.x and 7.x releases of both `google` and
-`google-beta`, covering each provider major supported by the module. Each job creates a temporary
-Terraform override file to constrain both providers to its selected major and initializes with
-`-upgrade` so an existing lock file cannot retain a different version. The module's published
+crosses these Terraform versions with the latest available 6.x, 7.x, and 8.x releases of both
+`google` and `google-beta`, covering each provider major supported by the module. Each job creates a
+temporary Terraform override file to constrain both providers to its selected major and initializes
+with `-upgrade` so an existing lock file cannot retain a different version. The module's published
 provider constraints remain unchanged. All matrix jobs must succeed for the workflow to pass. The
 `Pipeline Status` workflow uses `DataDog/ensure-ci-success` to wait for the PR's checks and commit
 statuses and fail if any fail. Require its `pipeline-status` check in the repository's branch

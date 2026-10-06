@@ -1,4 +1,4 @@
-# Copyright 2025 METRO Digital GmbH
+# Copyright 2026 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 6.0, < 8.0"
+      version = ">= 6.0, < 9.0" # Compatible with tested provider majors 6.x, 7.x, and 8.x.
     }
     # The beta provider is needed because the module uses google_project_service_identity
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = ">= 6.0, < 8.0"
+      version = ">= 6.0, < 9.0" # Compatible with tested provider majors 6.x, 7.x, and 8.x.
     }
   }
   required_version = ">= 1.10"
