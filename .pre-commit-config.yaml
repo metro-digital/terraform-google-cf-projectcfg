@@ -35,7 +35,11 @@ repos:
       - id: terraform_tflint
         args:
           - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
-          - --args=--fix
+      - id: terraform_trivy
+        args:
+          # Scan source configurations, not generated output or downloaded modules.
+          - --args=--skip-dirs=**/iac-output
+          - --args=--skip-dirs=**/.terraform
       - id: terraform_docs
         args:
           - --args=--config=.terraform-docs.yaml
@@ -54,7 +58,7 @@ repos:
     hooks:
       - id: mdformat
         # terraform-docs owns this generated document.
-        exclude: ^docs/TERRAFORM\.md$
+        exclude: ^docs/(TERRAFORM|CHANGELOG)\.md$
         # Optionally add plugins
         additional_dependencies:
           - mdformat-gfm

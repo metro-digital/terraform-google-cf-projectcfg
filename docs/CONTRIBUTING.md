@@ -56,6 +56,13 @@ The following dependencies must be installed on the development system:
 - [pre-commit framework][pcf] and all the configured pre-commit hooks (run `pre-commit install`) and
   their external binaries (if needed).
 
+Trivy 0.75.0 is required for the `terraform_trivy` pre-commit hook; CI installs this version.
+Install it locally with `brew install trivy` on macOS or from the official Trivy releases. The hook
+fails on Terraform misconfiguration findings and excludes generated `iac-output` and `.terraform`
+directories. The bootstrap bucket has resource-scoped exceptions for Google-managed encryption and
+the absence of a separate access-log destination; versioning is enabled from the first bootstrap
+stage. Review new findings individually rather than copying repository-wide ignores.
+
 ## Unit Tests
 
 Run the root module's full unit suite with Terraform 1.16 or later:

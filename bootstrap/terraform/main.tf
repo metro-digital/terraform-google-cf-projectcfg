@@ -132,6 +132,10 @@ resource "google_service_account_iam_member" "this" {
 }
 
 # Create storage bucket for Terraform IaC state.
+# Google-managed encryption keeps bootstrap independent of KMS provisioning.
+# No access-log destination bucket is provisioned during bootstrap.
+#trivy:ignore:AVD-GCP-0066
+#trivy:ignore:AVD-GCP-0077
 resource "google_storage_bucket" "this" {
   name          = var.terraform_state_bucket
   location      = var.terraform_state_bucket_location
@@ -139,6 +143,11 @@ resource "google_storage_bucket" "this" {
   project       = var.project
 
   uniform_bucket_level_access = true
+
+  # Protect state from the first bootstrap stage, matching the generated module.
+  versioning {
+    enabled = true
+  }
 
   storage_class = "MULTI_REGIONAL"
 
