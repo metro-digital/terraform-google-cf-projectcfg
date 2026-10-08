@@ -1,4 +1,4 @@
-# Copyright 2024 METRO Digital GmbH
+# Copyright 2026 METRO Digital GmbH
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,50 +18,65 @@ on:  # yamllint disable-line rule:truthy
   pull_request:
 
 permissions:
-  pull-requests: read
+  contents: read
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: '1.16.5'
+          terraform_wrapper: false
 
-      - uses: actions/setup-python@v7
+      - name: Setup Python
+        uses: actions/setup-python@v7
         with:
           python-version: '3.13'
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
       - name: Install terraform-docs
         env:
-          GH_TOKEN: ${{ github.token }}
+          TERRAFORM_DOCS_VERSION: '0.24.0'
         run: |
-          url="$(gh api repos/terraform-docs/terraform-docs/releases/latest \
-            --jq '.assets[] | select(.name | test("linux-amd64.tar.gz$")) | .browser_download_url')"
-          curl -L "$url" > terraform-docs.tgz && \
-            tar -xzf terraform-docs.tgz terraform-docs && rm terraform-docs.tgz && chmod +x terraform-docs && \
-            sudo mv terraform-docs /usr/bin/
+          curl --fail --location --retry 3 \
+            "https://github.com/terraform-docs/terraform-docs/releases/download/v${TERRAFORM_DOCS_VERSION}/terraform-docs-v${TERRAFORM_DOCS_VERSION}-linux-amd64.tar.gz" \
+            --output "${RUNNER_TEMP}/terraform-docs.tgz"
+          tar -xzf "${RUNNER_TEMP}/terraform-docs.tgz" -C "${RUNNER_TEMP}" terraform-docs
+          sudo install "${RUNNER_TEMP}/terraform-docs" /usr/local/bin/terraform-docs
 
-      - name: Install tflint
+      - name: Install TFLint
         uses: terraform-linters/setup-tflint@v6
         with:
-          tflint_version: latest
+          tflint_version: 'v0.61.0'
           cache: 'true'
           github_token: ${{ github.token }}
 
-      - name: Install shfmt
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Install shell quality tools
         run: |
-          url="$(gh api repos/mvdan/sh/releases/latest \
-            --jq '.assets[] | select(.name | test("_linux_amd64$")) | .browser_download_url')"
-          curl -L "$url" > shfmt && \
-            chmod +x shfmt && sudo mv shfmt /usr/bin/
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck shfmt
 
-      - name: pre-commit
+      - name: Install Trivy
+        env:
+          TRIVY_VERSION: '0.75.0'
+        run: |
+          curl --fail --location --retry 3 \
+            "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
+            --output "${RUNNER_TEMP}/trivy.tgz"
+          tar -xzf "${RUNNER_TEMP}/trivy.tgz" -C "${RUNNER_TEMP}" trivy
+          sudo install "${RUNNER_TEMP}/trivy" /usr/local/bin/trivy
+
+      - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         env:
-          # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
           GITHUB_TOKEN: ${{ github.token }}
