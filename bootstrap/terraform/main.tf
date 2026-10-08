@@ -149,7 +149,12 @@ resource "google_storage_bucket" "this" {
     enabled = true
   }
 
-  storage_class = "MULTI_REGIONAL"
+  storage_class = "STANDARD"
+
+  # Allow recovery of deleted state versions for seven days.
+  soft_delete_policy {
+    retention_duration_seconds = 604800
+  }
 
   lifecycle_rule {
     action {

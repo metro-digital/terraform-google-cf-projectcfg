@@ -8,10 +8,13 @@ module "tf_state_bucket" {
   project_id               = module.projectcfg.project_id
   name                     = "${GCS_BUCKET}"
   location                 = "${GCS_BUCKET_LOCATION}"
-  storage_class            = "MULTI_REGIONAL"
+  storage_class            = "STANDARD"
   uniform_access           = true
   versioning               = true
   public_access_prevention = "enforced"
+
+  # Allow recovery of deleted state versions for seven days.
+  soft_delete_retention_duration_seconds = 604800
 
   lifecycle_rules = [
     {
