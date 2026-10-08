@@ -3,7 +3,7 @@
 
 module "tf_state_bucket" {
   source  = "metro-digital/cf-bucket/google"
-  version = "~> 1.3"
+  version = "~> 2.0"
 
   project_id               = module.projectcfg.project_id
   name                     = "${GCS_BUCKET}"
