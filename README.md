@@ -76,6 +76,13 @@ granted automatically by Google Cloud Platform to the related service accounts w
 This excludes are configured in [project-iam.tf](./project-iam.tf) - look for a local variable
 called `project_iam_non_authoritative_roles`.
 
+The module warns during plan and apply if it finds project service accounts that are not configured
+in `service_accounts`. The warning lists the accounts for review; it does not change or delete them.
+Google service agents and the project's default Compute Engine service account are excluded. The App
+Engine default account remains subject to the check because it is user-managed. The Terraform
+principal needs `iam.serviceAccounts.list`; an API lookup failure is a normal data-source error. Set
+`disable_unmanaged_service_accounts_check = true` to skip the check and its API lookup.
+
 ## License
 
 This project is licensed under the terms of the [Apache License 2.0](LICENSE)
