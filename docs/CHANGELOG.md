@@ -1,5 +1,19 @@
 # Changelog
 
+## [3.7.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.6.0...v3.7.0) (2026-10-09)
+
+
+### Features
+
+* **bootstrap:** check if active gcloud account matches ADC user ([15d8a74](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/15d8a7480c9c2ab66370cd7eeaa027f968e5bc26))
+* support Google provider v8 ([6f7a82f](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/6f7a82f602c7b9ae4affd429a790c1e15ee6d158))
+
+
+### Bug Fixes
+
+* **bootstrap:** use standard storage with explicit state recovery ([c7dd3bf](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/c7dd3bf2207ac60fe1ecf0bdc7491dcd39f0ec48))
+* **ci:** validate test results independently of provider matrix ([9f23ab0](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/9f23ab085c690a91743369ac6f5ab41c5508dfbf))
+
 ## [3.6.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.5.1...v3.6.0) (2026-08-26)
 
 
