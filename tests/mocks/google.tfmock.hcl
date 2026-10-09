@@ -67,3 +67,7 @@ mock_data "google_iam_policy" {
     policy_data = "{\"bindings\":[]}"
   }
 }
+
+mock_data "google_service_accounts" {
+  defaults = { accounts = [] }
+}
