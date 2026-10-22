@@ -364,6 +364,20 @@ variable "custom_roles" {
   default = {}
 }
 
+variable "disable_unmanaged_service_accounts_check" {
+  description = <<-EOD
+    Disable the warning check for project service accounts not configured in `service_accounts`.
+    Defaults to false, so the check runs during plan and apply and reports unexpected account emails
+    without blocking the operation. Google service agents and the project's default Compute Engine
+    service account are excluded. The App Engine default service account is user-managed and is not excluded.
+    The Terraform principal needs `iam.serviceAccounts.list`; lookup failures are normal data-source errors.
+    Set to true to skip both the check and the service-account list API call.
+  EOD
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "service_accounts" {
   description = <<-EOD
     Service accounts to create for this project.

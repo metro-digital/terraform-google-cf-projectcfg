@@ -16,7 +16,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 6.0, < 9.0" # Compatible with tested provider majors 6.x, 7.x, and 8.x.
+      version = ">= 6.18, < 9.0" # 6.18 fixes pagination in google_service_accounts; tested with majors 6, 7, and 8.
     }
     # The beta provider is needed because the module uses google_project_service_identity
     google-beta = {
