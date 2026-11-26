@@ -397,7 +397,13 @@ variable "service_accounts" {
     see the example below. A Workload Identity Pool and a Workload Identity Provider needed for Workload Identity Federation
     will be created automatically. Each building block given gains permissions to authenticate as this service account
     using Workload Identity Federation. This allows workloads running on Meshstacks SaaS platform to use this service
-    account without the need for service account keys.
+    account without the need for service account keys. `issuer` is the OIDC issuer URL; `subjects` are exact, opaque
+    OIDC subject claims. Both legacy Kubernetes service account subjects and identity runner subjects are supported.
+    Identity runner issuers include `https://id-dev.meshstack.io/realms/metro-qa-saas-workloads` and
+    `https://id.meshstack.io/realms/metro-saas-workloads`.
+    Providers in the shared pool allow the configured subjects for their issuer, while each service account grants
+    access only to its configured subjects. Because IAM principals are scoped to the pool rather than a provider,
+    avoid reusing a subject across issuers unless the corresponding identities should have the same access.
 
     **`github_action_repositories` (optional):** You can list GitHub repositories (format: `user/repo`) here.
     A Workload Identity Pool and a Workload Identity Provider needed for Workload Identity Federation will be
@@ -432,6 +438,11 @@ variable "service_accounts" {
               issuer    = "https://container.googleapis.com/v1/projects/some-project/locations/europe-west1/clusters/some-cluster"
               audiences = ["gcp-workload-identity-provider:some-customer"]
               subjects  = ["system:serviceaccount:some-customer:workspace.example.buildingblockdefinition.29980db7-2a61-4f01-bf6b-18ea61606700"]
+            },
+            {
+              issuer    = "https://id.meshstack.io/realms/metro-saas-workloads"
+              audiences = ["gcp-workload-identity-provider:some-customer"]
+              subjects  = ["bbd:ceg:29980db7-2a61-4f01-bf6b-18ea61606700"]
             }
           ]
         }

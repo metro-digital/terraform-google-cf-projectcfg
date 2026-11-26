@@ -47,17 +47,11 @@ resource "google_iam_workload_identity_pool_provider" "meshstack_buildingblocks"
 
   workload_identity_pool_id          = google_iam_workload_identity_pool.meshstack_buildingblocks[0].workload_identity_pool_id
   workload_identity_pool_provider_id = md5(each.key)
-  description                        = <<-EOD
-    OIDC identity provider for meshStack building blocks
-    GKE Cluster
-        Project ID: ${provider::google::project_from_id(each.key)}
-        Location: ${provider::google::location_from_id(each.key)}
-        Name: ${provider::google::name_from_id(each.key)}"
-  EOD
+  description                        = "OIDC identity provider for meshStack building blocks"
 
   oidc {
     issuer_uri        = each.key
-    allowed_audiences = each.value
+    allowed_audiences = distinct(each.value)
   }
 
   # Map the OIDC token's `sub` claim to google.subject
@@ -67,6 +61,6 @@ resource "google_iam_workload_identity_pool_provider" "meshstack_buildingblocks"
 
   attribute_condition = join(" || ", [
     for subject in local.meshstack_bb_pool_provider_subjects[each.key] :
-    "google.subject == '${subject}'"
+    "google.subject == ${jsonencode(subject)}"
   ])
 }
