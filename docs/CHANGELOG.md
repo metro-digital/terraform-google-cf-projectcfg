@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.8.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.7.0...v3.8.0) (2026-11-26)
+
+
+### Features
+
+* **wif:** support meshStack identity runner ([d2a714f](https://github.com/metro-digital/terraform-google-cf-projectcfg/commit/d2a714f58666bbe55c719e1c49dba712c2608b63))
+
 ## [3.7.0](https://github.com/metro-digital/terraform-google-cf-projectcfg/compare/v3.6.0...v3.7.0) (2026-10-09)
 
 
